@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>PRAHARIX 2.0 - National Strategic Multi-Hazard Command & Decision-Support System</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/globe.gl"></script>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+body{background:#050816;color:white;overflow-x:hidden;position:relative;min-height:100vh;}
+#bg-canvas{position:fixed; top:0; left:0; width:100%; height:100%; z-index:-5; background:radial-gradient(ellipse at center, #0a1430 0%, #02040a 100%);}
+.header{text-align:center;padding:30px 20px 20px 20px; position:relative; z-index:2;}
+.header h1{font-size:44px;font-weight:900;letter-spacing:1px;background:linear-gradient(90deg,#ff7b00,#ffd700,#00e676,#00bfff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.header h2{font-size:20px;color:#e2e8f0;margin-top:6px;font-weight:600;}
+.navbar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:rgba(12,18,30,.88);backdrop-filter:blur(12px); border-bottom:1px solid rgba(0,191,255,.2); position:relative; z-index:100; flex-wrap:wrap; gap:12px;}
+.card{background:rgba(12,18,30,.82);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:20px;margin:15px; position:relative; z-index:2; box-shadow:0 10px 30px rgba(0,0,0,0.4);}
+.badge{display:inline-block;padding:5px 12px;margin:4px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);font-size:11px;font-weight:700;}
+.badge-ncs{border-color:#ff9100;color:#ff9100;background:rgba(255,145,0,0.12);}
+.badge-usgs{border-color:#00e676;color:#00e676;background:rgba(0,230,118,0.12);}
+table{width:100%;border-collapse:collapse;}th{background:#111827;padding:12px;color:#00bfff;text-align:left;font-size:13px;}td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;}
+#map{height:580px;width:100%;border-radius:18px;border:1px solid rgba(0,191,255,.25);}
+#map-3d{height:600px;width:100%;border-radius:18px;border:2px solid #00bfff;display:none;background:black;}
+.view-toggle{display:flex;justify-content:center;gap:10px;margin:15px 0;flex-wrap:wrap;}
+.toggle-btn{padding:8px 18px;border:1px solid #00bfff;background:rgba(0,191,255,0.1);color:#00bfff;border-radius:25px;cursor:pointer;font-weight:700;font-size:12px;transition:all 0.2s ease;display:inline-flex;align-items:center;gap:6px;}
+.toggle-btn:hover{background:rgba(0,191,255,0.25);box-shadow:0 0 12px rgba(0,191,255,0.4);}
+.toggle-btn.active{background:#00bfff;color:black;box-shadow:0 0 15px #00bfff;}
+a{color:#00bfff;text-decoration:none;}
+.metric-pill{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;margin-top:8px;}
+
+/* TACTICAL CONSOLE SPECIALS */
+.tactical-grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;padding:0 15px 15px 15px;}
+.tactical-grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;}
+.tactical-console{background:linear-gradient(135deg, rgba(20,10,28,0.92), rgba(10,22,40,0.92)); border:2px solid #ff1744; border-radius:18px; padding:22px; margin:15px; position:relative;}
+.eew-city-card{background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; text-align:center; transition:all 0.2s;}
+.eew-city-card:hover{border-color:#00bfff; transform:translateY(-2px);}
+.eew-countdown-val{font-size:32px; font-weight:900; line-height:1.1; margin:6px 0;}
+.interlock-badge{background:rgba(0,0,0,0.5); border-left:4px solid #00e676; padding:10px 14px; border-radius:8px; font-size:12px; margin-bottom:8px;}
+
+/* AUDIO & MODAL ANIMATIONS */
+@keyframes pulse-siren {
+    0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 14px rgba(255, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
+}
+.btn-siren-active {
+    animation: pulse-siren 1.2s infinite !important;
+    background: #ff1744 !important;
+    color: white !important;
+    border-color: #ff1744 !important;
+    box-shadow: 0 0 18px #ff1744 !important;
+}
+.btn-siren-armed {
+    background: rgba(0, 230, 118, 0.2) !important;
+    border-color: #00e676 !important;
+    color: #00e676 !important;
+}
+.btn-mesh-active {
+    background: rgba(255, 145, 0, 0.25) !important;
+    border-color: #ff9100 !important;
+    color: #ff9100 !important;
+    box-shadow: 0 0 12px rgba(255, 145, 0, 0.4);
+}
+
+/* MODAL WINDOWS */
+.modal-overlay{display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:999999; justify-content:center; align-items:center; padding:20px;}
+.modal-box{background:#0b1329; border:2px solid #00bfff; border-radius:18px; max-width:850px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:0 0 40px rgba(0,191,255,0.3); position:relative;}
+.modal-close{position:absolute; top:16px; right:18px; background:none; border:none; color:#ff4444; font-size:24px; cursor:pointer; font-weight:800;}
+
+/* AUDIO WAVE ANIMATION */
+.sound-wave-bars{display:inline-flex; align-items:center; gap:3px; height:16px; margin-left:6px;}
+.sound-wave-bars span{display:inline-block; width:3px; height:100%; background:#00bfff; border-radius:2px; animation:wave 1s infinite ease-in-out;}
+.sound-wave-bars span:nth-child(2){animation-delay:0.2s; height:60%;}
+.sound-wave-bars span:nth-child(3){animation-delay:0.4s; height:80%;}
+.sound-wave-bars span:nth-child(4){animation-delay:0.1s; height:40%;}
+@keyframes wave { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1); } }
+
+/* TACTICAL OPERATIONS PORTALS UNIFIED DECK */
+.tactical-portal-btn {
+    padding: 7px 14px;
+    border: 1px solid rgba(0, 191, 255, 0.35);
+    background: rgba(12, 22, 40, 0.95);
+    color: #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer !important;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 1000001;
+}
+.tactical-portal-btn:hover {
+    background: rgba(0, 191, 255, 0.3) !important;
+    border-color: #00bfff !important;
+    color: #38bdf8 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 0 14px rgba(0, 191, 255, 0.5) !important;
+}
+.tactical-portal-btn:hover {
+    background: rgba(0, 191, 255, 0.22);
+    border-color: #00bfff;
+    color: #38bdf8;
+    transform: translateY(-1px);
+    box-shadow: 0 0 12px rgba(0, 191, 255, 0.35);
+}
+.tactical-portal-btn.active {
+    background: linear-gradient(135deg, rgba(0, 191, 255, 0.38), rgba(30, 58, 138, 0.88));
+    border-color: #00bfff;
+    color: #ffffff;
+    box-shadow: 0 0 18px rgba(0, 191, 255, 0.55);
+}
+@keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<!-- AUDIO SIREN ELEMENT -->
+<audio id="sirenAudio" src="/static/siren.mp3.wav" loop preload="auto"></audio>
+
+<!-- FLOATING CRITICAL HAZARD ALERT BANNER -->
+<div id="criticalBanner" style="display:none; position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:99999; background:linear-gradient(90deg, #990000, #ff1744); border:2px solid #fff; border-radius:30px; padding:12px 24px; box-shadow:0 0 35px rgba(255,0,0,0.9); align-items:center; gap:16px;">
+    <span style="font-size:24px; animation:pulse-siren 1s infinite;">🚨</span>
+    <div>
+        <b style="font-size:14px; color:#fff; letter-spacing:0.5px;" data-i18n="crit_banner_title">CRITICAL HAZARD DETECTED!</b>
+        <span id="criticalBannerText" style="font-size:12px; color:#ffd0d0; display:block;">
+            {% if latest_alert %}{{ latest_alert.place }} - Mag {{ latest_alert.magnitude }}{% else %}Critical hazard alert triggered in monitored zone{% endif %}
+        </span>
+    </div>
+    <button onclick="stopSirenAudio()" style="background:#fff; color:#cc0000; font-weight:800; border:none; border-radius:20px; padding:7px 16px; cursor:pointer; font-size:12px; transition:0.2s;" data-i18n="silence_btn">
+        SILENCE SIREN
+    </button>
+</div>
+
+<!-- TOP COMMAND NAVBAR -->
+<div class="navbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:24px;">🛰</span>
+        <div>
+            <h1 style="font-size:18px; margin:0; background:linear-gradient(90deg,#ff7b00,#ffd700,#00bfff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;" data-i18n="nav_title">PRAHARIX 2.0 NATIONAL COMMAND CENTER</h1>
+            <p style="font-size:10px; color:#94a3b8; letter-spacing:0.5px;" data-i18n="nav_sub">TACTICAL DECISION-SUPPORT • NDMA & ITU-T COMPLIANT</p>
+        </div>
+    </div>
+
+
+
+
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <!-- APEX COMMAND SHORTCUT -->
+        <a href="/apex" class="toggle-btn" style="border-color:#00bfff; color:#00bfff; background:rgba(0,191,255,0.22); box-shadow:0 0 14px rgba(0,191,255,0.45); font-weight:800;">
+            ⚡ APEX COMMAND HUB
+        </a>
+
+        <!-- BILINGUAL TOGGLE -->
+        <button id="lang-toggle-btn" onclick="toggleLanguage()" class="toggle-btn" style="border-color:#ffd700; color:#ffd700;">
+            <span id="lang-flag">🇮🇳</span> <span id="lang-label">हिन्दी (HI)</span>
+        </button>
+
+        <!-- AI VOICE SITREP BUTTON -->
+        <button id="btn-sitrep" onclick="triggerVoiceSITREP()" class="toggle-btn" style="border-color:#00bfff; color:#00bfff;">
+            <span>🎙️</span> <span id="sitrep-btn-text" data-i18n="sitrep_btn">AI SITREP BRIEFING</span>
+            <div id="sitrep-wave" class="sound-wave-bars" style="display:none;"><span></span><span></span><span></span><span></span></div>
+        </button>
+
+        <!-- RESILIENT OFFLINE MESH TOGGLE -->
+        <button id="btn-mesh-toggle" onclick="toggleMeshMode()" class="toggle-btn" style="border-color:#ff9100; color:#ff9100;">
+            <span id="mesh-icon">📶</span> <span id="mesh-text">MESH MODE: CLOUD</span>
+        </button>
+
+        <!-- SIREN CONTROLS -->
+        <button id="btn-siren-toggle" onclick="toggleSirenArmed()" class="toggle-btn">
+            <span id="siren-icon">🔇</span>
+            <span id="siren-status-text" data-i18n="siren_muted">SIREN: MUTED</span>
+        </button>
+        <button id="btn-siren-test" onclick="toggleManualSirenTest()" class="toggle-btn" style="border-color:#ff7b00; color:#ff7b00;" data-i18n="siren_test">
+            🚨 TEST AUDIO
+        </button>
+
+        <div class="status" style="font-size:12px;"><span style="color:#00e676;">● LIVE TELEMETRY</span> <span id="clock" style="margin-left:8px;color:#00bfff;"></span></div>
+    </div>
+</div>
+
+<!-- OFFLINE MESH HUD BAR (ACTIVATES IN MESH MODE) -->
+<div id="meshHudBar" style="display:none; background:linear-gradient(90deg, #3d1c00, #1a0d00); border-bottom:2px solid #ff9100; padding:10px 24px; font-size:12px; color:#ffcc80; display:none; justify-content:space-between; align-items:center; z-index:90; flex-wrap:wrap; gap:8px;">
+    <div>
+        <b>📶 RESILIENT DISASTER MESH ACTIVE:</b> Node ID: <code>PRAHARI-MESH-01</code> | RF: <b>868.100 MHz (LoRa SF7)</b> | Hops: <b>3 Nodes</b> | Direct VHF Net: <b>148.650 MHz</b>
+    </div>
+    <div>
+        <span>🗄️ Local SQLite Cache: <b>{{ stats.earthquakes }} Incidents Armed</b></span>
+        <span style="margin-left:14px; color:#00e676;">🟢 Local Siren Hardware Relay: <b>ONLINE</b></span>
+    </div>
+</div>
+
+<!-- TACTICAL OPERATIONS MASTER PORTAL COMMAND DECK (ALL PORTALS IN ONE LINK) -->
+<div id="tacticalPortalDeck" style="background: linear-gradient(90deg, #050a17, #0b1528, #050a17); border-bottom: 2px solid #00bfff; padding: 10px 20px; position: sticky; top: 0; z-index: 999999; backdrop-filter: blur(14px); box-shadow: 0 4px 25px rgba(0,0,0,0.85);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #00e676; box-shadow: 0 0 10px #00e676; animation: pulse-dot 1.5s infinite;"></span>
+            <span style="font-size: 13px; font-weight: 800; color: #00bfff; letter-spacing: 1px;">TACTICAL OPERATIONS PORTALS:</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;" id="tacticalPortalTabs">
+            <button type="button" class="tactical-portal-btn active" id="portaltab-hq" onclick="window.openUnifiedPortal('hq', '/')">
+                🛰️ National Command HQ
+            </button>
+            <button type="button" class="tactical-portal-btn" id="portaltab-predict" onclick="window.openUnifiedPortal('predict', '/predict')">
+                🧠 AI Predictive Engine
+            </button>
+            <button type="button" class="tactical-portal-btn" id="portaltab-govt" onclick="window.openUnifiedPortal('govt', '/govt')">
+                🏛️ Govt Operations & EOC
+            </button>
+            <button type="button" class="tactical-portal-btn" id="portaltab-global" onclick="window.openUnifiedPortal('global', '/global')">
+                🌐 Global Grid (50 Nations)
+            </button>
+            <button type="button" class="tactical-portal-btn" id="portaltab-apex" onclick="window.openUnifiedPortal('apex', '/apex')">
+                ⚡ Defense Apex Command
+            </button>
+            <button type="button" class="tactical-portal-btn" id="portaltab-multihazard" onclick="window.openUnifiedPortal('multihazard', '/multihazard')">
+                🌊 Multi-Hazard Hub
+            </button>
+            <button type="button" class="tactical-portal-btn" id="portaltab-sar" onclick="window.openUnifiedPortal('sar', '/sar')">
+                📡 Sentinel-1 SAR
+            </button>
+            <button type="button" class="tactical-portal-btn" id="portaltab-india" onclick="window.openUnifiedPortal('india', '/india')">
+                🇮🇳 India Strategic
+            </button>
+            <button type="button" class="tactical-portal-btn" id="portaltab-alerts" onclick="window.openUnifiedPortal('alerts', '/alerts')">
+                🚨 Tactical Alerts
+            </button>
+            <button type="button" class="tactical-portal-btn" id="portaltab-analytics" onclick="window.openUnifiedPortal('analytics', '/trend')">
+                📊 Analytics & Trends
+            </button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" onclick="window.togglePortalFullscreen()" title="Toggle Fullscreen View" style="background: rgba(0,191,255,0.15); border: 1px solid #00bfff; color: #00bfff; border-radius: 6px; padding: 5px 12px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                ⛶ FULLSCREEN
+            </button>
+            <a id="portalExternalBtn" href="/" target="_blank" title="Open active portal in new tab" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.2); color: #94a3b8; border-radius: 6px; padding: 5px 10px; font-size: 11px; text-decoration: none; font-weight: 700;">
+                ↗ POP-OUT
+            </a>
+        </div>
+    </div>
+</div>
+
+
+
+<div id="hq-main-view">
+<!-- HEADER INTRO -->
+<div class="header">
+    <h1>PRAHARIX 2.0</h1>
+    <h2 data-i18n="header_sub">National Strategic Multi-Hazard Command & Decision-Support System</h2>
+    <p style="color:#b8c5d6;margin-top:6px;font-size:13px;" data-i18n="header_desc">Integrated Earth Observation • Physics EEW • Tactical Resource Dispatch Engine</p>
+    <div style="margin-top:14px;">
+        <span class="badge badge-ncs">🇮🇳 NCS (MoES INDIA) LIVE</span>
+        <span class="badge badge-usgs">🌐 USGS SEISMIC 24H</span>
+        <span class="badge" style="border-color:#00bfff;color:#00bfff;">🛰 SENTINEL-1 SAR</span>
+        <span class="badge" style="border-color:#ffd700;color:#ffd700;">🌀 IMD DOPPLER & CYCLONE</span>
+        <span class="badge" style="border-color:#ff1744;color:#ff1744;">⚡ EEW P-WAVE SIMULATOR</span>
+        <span class="badge" style="border-color:#00e676;color:#00e676;">🚒 NDRF 16 BATTALIONS</span>
+        <span class="badge" style="border-color:#00bfff;color:#00bfff;">📢 ITU-T CAP v1.2</span>
+        <span class="badge">🌍 3D GLOBE ENGINE</span>
+    </div>
+</div>
+
+<!-- 4 TOP LEVEL STRATEGIC METRIC CARDS -->
+<div class="tactical-grid-4">
+    <!-- WEATHER LIVE (HQ NEW DELHI) -->
+    <div class="card" style="border-top:3px solid #ffd700;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 style="font-size:16px;" data-i18n="card_weather_title">🌦 Live Meteorological</h2>
+            <span class="badge" style="border-color:#00e676;color:#00e676;">● IMD / METEO</span>
+        </div>
+        <p style="font-size:22px;font-weight:800;color:#ffd700;margin:6px 0;">{{weather.temp}} °C <span style="font-size:13px;color:#bbb;">({{weather.condition}})</span></p>
+        <p style="font-size:12px;color:#aaa;"><span data-i18n="feels_like">Feels Like</span>: <b>{{weather.feels_like}} °C</b> | <span data-i18n="humidity">Humidity</span>: <b>{{weather.humidity}}%</b></p>
+        <p style="font-size:12px;color:#aaa;"><span data-i18n="wind">Wind</span>: <b>{{weather.wind}} km/h ({{weather.wind_dir}})</b> | <span data-i18n="precip">Rain</span>: <b>{{weather.precipitation}} mm</b></p>
+        <p style="font-size:11px;color:#00bfff;margin-top:6px;">📍 {{weather.location}} (Command HQ)</p>
+    </div>
+
+    <!-- SENTINEL-1 SAR IMPACT CARD -->
+    <div class="card" style="border-top:3px solid #ff7b00;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 style="font-size:16px;" data-i18n="card_sar_title">🛰 Sentinel-1 SAR AI</h2>
+            <span class="badge" style="border-color:#ff7b00;color:#ff7b00;">● COPERNICUS</span>
+        </div>
+        <p style="font-size:22px;font-weight:800;color:#ff7b00;margin:6px 0;">{{sar_data.risk_score}} <span style="font-size:13px;color:#bbb;">/ 100 Risk ({{sar_data.threat_level}})</span></p>
+        <p style="font-size:12px;color:#aaa;">Platform: <b>{{sar_data.satellite}}</b> ({{sar_data.radar_band}})</p>
+        <p style="font-size:12px;color:#aaa;">Backscatter VV: <b>{{sar_data.backscatter_vv}}</b> | Pol: <b>{{sar_data.polarization}}</b></p>
+        <p style="font-size:11px;color:#00e676;margin-top:6px;">🌊 Water Mask Expansion: <b>{{sar_data.flood_index}}</b></p>
+    </div>
+
+    <!-- SEISMIC DUAL FEED (NCS + USGS) -->
+    <div class="card" style="border-top:3px solid #00e676;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 style="font-size:16px;" data-i18n="card_seismic_title">🇮🇳 NCS & USGS Seismic</h2>
+            <span class="badge" style="border-color:#00e676;color:#00e676;">● {{stats.earthquakes}} ACTIVE</span>
+        </div>
+        <p style="font-size:22px;font-weight:800;color:#00e676;margin:6px 0;">{{stats.earthquakes}} <span style="font-size:13px;color:#bbb;" data-i18n="events_24h">Events Monitored</span></p>
+        <p style="font-size:12px;color:#aaa;">Critical Events: <b style="color:{% if stats.critical > 0 %}#ff1744{% else %}#00e676{% endif %};">{{stats.critical}}</b> | Elevated Alerts: <b>{{stats.alerts}}</b></p>
+        <p style="font-size:12px;color:#aaa;">Peak Severity Score: <b>{{stats.score}}</b> ({{stats.threat}})</p>
+        <p style="font-size:11px;color:#ffd700;margin-top:6px;">🇮🇳 National Centre for Seismology + USGS</p>
+    </div>
+
+    <!-- NATIONAL THREAT STATUS -->
+    <div class="card" style="border-top:3px solid #00bfff;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 style="font-size:16px;" data-i18n="card_command_title">🛡 Tactical Status</h2>
+            <span class="badge" style="border-color:#00bfff;color:#00bfff;">AI FUSION</span>
+        </div>
+        <p style="font-size:22px;font-weight:800;color:{% if stats.threat == 'CRITICAL' %}#ff1744{% elif stats.threat == 'HIGH' %}#ff9100{% else %}#00bfff{% endif %};margin:6px 0;">
+            {{stats.threat}} <span style="font-size:13px;color:#bbb;">({{global_risk_score}} / 100)</span>
+        </p>
+        <p style="font-size:12px;color:#aaa;">FTI Composite Risk Index: <b>{{fti_score}}%</b></p>
+        <p style="font-size:12px;color:#aaa;">Predictive AI Engine: <b>{{prediction.prediction}} ({{prediction.confidence}}%)</b></p>
+        <p style="font-size:11px;color:#8fa0be;margin-top:6px;">🕒 Synced: {{current_time}}</p>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ⚡ FEATURE 2: EARTHQUAKE EARLY WARNING (EEW) & P-WAVE LEAD-TIME CALCULATOR -->
+<!-- ========================================================================= -->
+<div class="tactical-console">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+            <h2 style="color:#ff1744; font-size:20px; display:flex; align-items:center; gap:8px;">
+                <span>⚡</span> <span data-i18n="eew_title">Earthquake Early Warning (EEW) & P-Wave Physics Lead-Time Simulator</span>
+            </h2>
+            <p style="font-size:12px; color:#cbd5e1; margin-top:4px;" data-i18n="eew_sub">
+                Physics calculation: Primary P-wave (Vp ≈ 6.0 km/s) vs Destructive Shear S-wave (Vs ≈ 3.5 km/s). City lead-time countdown & automated SCADA triggers.
+            </p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="eewScenarioSelect" onchange="loadEEWScenario()" style="background:#111827; color:#fff; border:1px solid #ff1744; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">
+                <option value="kangra_m62">Scenario 1: Kangra Valley, Himachal Pradesh (M6.2)</option>
+                <option value="hindukush_m68">Scenario 2: Hindu Kush Subduction Zone (M6.8)</option>
+                <option value="chamoli_m64">Scenario 3: Chamoli Fault, Uttarakhand (M6.4)</option>
+                <option value="kutch_m60">Scenario 4: Kutch Allah Bund Fault, Gujarat (M6.0)</option>
+                <option value="kopili_m67">Scenario 5: Kopili Fault Zone, Assam-Meghalaya (M6.7)</option>
+            </select>
+            <button onclick="startEEWCountdownSimulation()" class="toggle-btn" style="background:#ff1744; color:#fff; border-color:#ff1744; box-shadow:0 0 15px rgba(255,23,68,0.5);">
+                🚀 <span data-i18n="eew_run_btn">RUN EEW SIMULATION</span>
+            </button>
+            <button onclick="openCAPModalForCurrent()" class="toggle-btn" style="border-color:#ffd700; color:#ffd700;">
+                📢 <span data-i18n="eew_cap_btn">GENERATE NDMA CAP ALERT</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ACTIVE SCENARIO BANNER -->
+    <div id="eewActiveBanner" style="background:rgba(255,23,68,0.15); border:1px solid #ff1744; border-radius:12px; padding:12px 18px; margin:16px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+            <b style="color:#ff1744; font-size:14px;" id="eewBannerPlace">Kangra Valley Fault, Himachal Pradesh (M6.2)</b>
+            <span style="font-size:12px; color:#ddd; margin-left:12px;">Hypocentral Depth: <b id="eewBannerDepth">12 km</b> | Fault: <b id="eewBannerFault">Himalayan Frontal Thrust (HFT)</b></span>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span class="badge" style="background:#ff1744; color:#fff;">SEISMIC ZONE V</span>
+            <span id="eewSimStatus" class="badge" style="background:#00e676; color:#000;">● DETECTOR ARMED</span>
+        </div>
+    </div>
+
+    <!-- CITY LEAD TIME COUNTDOWN CARDS -->
+    <h3 style="font-size:14px; color:#00bfff; margin-bottom:10px;" data-i18n="eew_arrival_title">Estimated Destructive S-Wave Arrival & Lead-Time Countdowns</h3>
+    <div id="eewCityGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom:16px;">
+        <!-- Populated dynamically via JS -->
+    </div>
+
+    <!-- AUTOMATED INFRASTRUCTURE ADVISORY ACTIONS -->
+    <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; margin-top:10px;">
+        <h4 style="font-size:13px; color:#ffd700; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <span>⚙️</span> <span data-i18n="eew_interlock_title">Automated Critical Infrastructure SCADA Interlocks & Early Action Protocols</span>
+        </h4>
+        <div id="interlocksGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px;">
+            <!-- Interlocks populated dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 🗺️ FEATURE 1: TACTICAL GIS MAP WITH ISRO BHUVAN, ZONES, CYCLONE & NDRF -->
+<!-- ========================================================================= -->
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+            <h2 style="color:#00bfff; font-size:20px; display:flex; align-items:center; gap:8px;">
+                <span>🗺️</span> <span data-i18n="map_title">National Tactical Multi-Hazard GIS Command Map</span>
+            </h2>
+            <p style="font-size:12px; color:#94a3b8; margin-top:2px;" data-i18n="map_sub">
+                ISRO Bhuvan / Satellite Baselayers • Indian Seismic Zones V & IV • IMD Cyclone & Doppler Radar • 16 NDRF Battalions
+            </p>
+        </div>
+        <div class="view-toggle" style="margin:0;">
+            <button id="btn2d" class="toggle-btn active" onclick="show2D()">🗺️ 2D Interactive GIS</button>
+            <button id="btn3d" class="toggle-btn" onclick="show3D()">🌍 3D Tactical Globe</button>
+        </div>
+    </div>
+
+    <!-- MAP LAYER CONTROLS -->
+    <div style="display:flex; gap:10px; margin:14px 0; flex-wrap:wrap; align-items:center; background:rgba(0,0,0,0.4); padding:10px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
+        <span style="font-size:12px; font-weight:700; color:#ffd700;">TACTICAL OVERLAYS:</span>
+        <label style="font-size:12px; display:flex; align-items:center; gap:5px; cursor:pointer;">
+            <input type="checkbox" id="chkSeismicZones" checked onchange="toggleLayerSeismicZones()"> 
+            <span style="color:#ff1744;">🇮🇳 Seismic Zones V & IV</span>
+        </label>
+        <label style="font-size:12px; display:flex; align-items:center; gap:5px; cursor:pointer;">
+            <input type="checkbox" id="chkCyclone" checked onchange="toggleLayerCyclone()"> 
+            <span style="color:#ffd700;">🌀 IMD Cyclones & Radars</span>
+        </label>
+        <label style="font-size:12px; display:flex; align-items:center; gap:5px; cursor:pointer;">
+            <input type="checkbox" id="chkNDRF" checked onchange="toggleLayerNDRF()"> 
+            <span style="color:#00e676;">🚒 16 NDRF Battalions</span>
+        </label>
+        <label style="font-size:12px; display:flex; align-items:center; gap:5px; cursor:pointer;">
+            <input type="checkbox" id="chkFloodMask" checked onchange="toggleLayerFloodMask()"> 
+            <span style="color:#00bfff;">🌊 SAR Flood Inundation Mask</span>
+        </label>
+        <span style="margin-left:auto; font-size:11px; color:#94a3b8;">BASEMAP: Switchable via top-right layer control (Includes ISRO Bhuvan / Satellite)</span>
+    </div>
+
+    <div id="map"></div>
+    <div id="map-3d"></div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 🚒 FEATURE 4: TACTICAL NDRF & SDRF ASSET DISPATCH ENGINE -->
+<!-- ========================================================================= -->
+<div class="card" style="border:1px solid #00e676;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+            <h2 style="color:#00e676; font-size:18px; display:flex; align-items:center; gap:8px;">
+                <span>🚒</span> <span data-i18n="ndrf_engine_title">Tactical NDRF & SDRF Rapid Asset Dispatch Engine</span>
+            </h2>
+            <p style="font-size:12px; color:#94a3b8; margin-top:2px;" data-i18n="ndrf_engine_sub">
+                Official register of India's 16 NDRF Battalions. Nearest unit ETA calculator, equipment packages, and safe relief camp allocator.
+            </p>
+        </div>
+        <div>
+            <button onclick="dispatchOrderNow()" class="toggle-btn" style="background:#00e676; color:#000; border-color:#00e676; font-weight:800;">
+                📋 <span data-i18n="ndrf_dispatch_btn">DISPATCH REQUISITION ORDER</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="tactical-grid-2" style="margin-top:16px;">
+        <!-- NEAREST BATTALION SUMMARY -->
+        <div style="background:rgba(0,0,0,0.45); border:1px solid rgba(0,230,118,0.3); border-radius:12px; padding:16px;">
+            <h3 style="font-size:14px; color:#00e676; margin-bottom:8px;">🎯 Primary Assigned Response Unit</h3>
+            <div id="ndrfPrimaryCard">
+                <p style="font-size:18px; font-weight:800; color:#fff;" id="ndrfPrimaryName">14th Bn NDRF (Jakhari, Mandi, HP)</p>
+                <p style="font-size:12px; color:#aaa; margin:4px 0;">Specialist Role: <b>Western Himalayas Seismic Zone V & Mountain SAR</b></p>
+                <div style="display:flex; gap:12px; margin:10px 0; flex-wrap:wrap;">
+                    <div class="metric-pill">Distance: <b id="ndrfPrimaryDist">82.4 km</b></div>
+                    <div class="metric-pill">Road Convoy ETA: <b id="ndrfPrimaryRoad" style="color:#ffd700;">1.6 Hours</b></div>
+                    <div class="metric-pill">IAF Airlift ETA: <b id="ndrfPrimaryAir" style="color:#00e676;">45 Mins</b></div>
+                </div>
+                <p style="font-size:12px; color:#cbd5e1;">Emergency Hotline: <b id="ndrfPrimaryContact">01905-223400</b> | Tactical Radio Net: <b>148.650 MHz</b></p>
+            </div>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.08); margin:12px 0;">
+            <p style="font-size:12px; color:#8fa0be;">Secondary Backup Unit: <b id="ndrfSecondaryName" style="color:#fff;">7th Bn NDRF (Bibiwala, Bathinda)</b> (<span id="ndrfSecondaryDist">164.2 km</span>)</p>
+        </div>
+
+        <!-- ASSETS & RELIEF CAMPS -->
+        <div style="background:rgba(0,0,0,0.45); border:1px solid rgba(0,191,255,0.3); border-radius:12px; padding:16px;">
+            <h3 style="font-size:14px; color:#00bfff; margin-bottom:8px;">📦 Asset Package Checklist & Designated Relief Camps</h3>
+            <div style="font-size:12px; color:#ddd;">
+                <ul id="ndrfAssetsList" style="margin-left:18px; line-height:1.6;">
+                    <li>Heavy Hydraulic Cutters & Spreaders (CSSR): 12 Units</li>
+                    <li>Acoustic Life Detectors & Search Cameras: 8 Units</li>
+                    <li>Canine K9 Search Squads: 4 Dog Teams</li>
+                    <li>Inmarsat / SATCOM Tactical Transceivers: 4 Units</li>
+                </ul>
+            </div>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.08); margin:12px 0;">
+            <h4 style="font-size:12px; color:#ffd700; margin-bottom:6px;">🏕 Designated Safe Evacuation Shelter:</h4>
+            <div id="reliefCampInfo" style="font-size:12px; color:#e2e8f0;">
+                <b>Kangra District Stadium Safe Evac Shelter</b> (Dharamshala) | Capacity: <b>6,000</b> | Available Beds: <b style="color:#00e676;">3,800 Vacant</b> | Medical: <b>Tanda Medical College MFR</b>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 🌊 FEATURE 3: ADVANCED SAR AI - FLOOD INUNDATION & INFRASTRUCTURE IMPACT -->
+<!-- ========================================================================= -->
+<div class="card" style="border:1px solid #ff7b00;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+            <h2 style="color:#ff7b00; font-size:18px; display:flex; align-items:center; gap:8px;">
+                <span>🌊</span> <span data-i18n="sar_impact_title">Advanced SAR AI: Automated Flood Inundation & Population Impact Matrix</span>
+            </h2>
+            <p style="font-size:12px; color:#94a3b8; margin-top:2px;" data-i18n="sar_impact_sub">
+                Sentinel-1 SAR C-Band Synthetic Aperture Radar. Water mask delta-sigma (Δσ⁰) extraction & critical infrastructure exposure.
+            </p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <button id="btnSarSimulate" onclick="toggleSarSimulation()" class="toggle-btn" style="border-color:#ff7b00; color:#ff7b00;">
+                ⚡ <span id="sarSimText">SIMULATE RIVER BASIN FLOOD SURGE</span>
+            </button>
+            <a href="/sar" class="badge" style="border-color:#ff7b00; color:#ff7b00; text-decoration:none; padding:8px 14px;">Open Full SAR Center ➔</a>
+        </div>
+    </div>
+
+    <!-- SAR IMPACT TABLE & METRICS -->
+    <div class="tactical-grid-4" style="padding:15px 0 5px 0;">
+        <div class="eew-city-card" style="border-color:#00bfff;">
+            <p style="font-size:11px; color:#8fa0be;">SAR BACKSCATTER DIFFERENTIAL</p>
+            <div class="eew-countdown-val" style="color:#00bfff;" id="sarDeltaVal">{{ sar_data.impact_matrix.delta_sigma_0 }}</div>
+            <p style="font-size:11px; color:#aaa;">Pre: {{ sar_data.impact_matrix.pre_event_sigma }} → Post: {{ sar_data.impact_matrix.post_event_sigma }}</p>
+        </div>
+        <div class="eew-city-card" style="border-color:#ff7b00;">
+            <p style="font-size:11px; color:#8fa0be;">INUNDATED WATER SURFACE</p>
+            <div class="eew-countdown-val" style="color:#ff7b00;" id="sarInundatedVal">{{ sar_data.impact_matrix.inundated_area_km2 }} km²</div>
+            <p style="font-size:11px; color:#aaa;">Calibrated Radar Water Mask</p>
+        </div>
+        <div class="eew-city-card" style="border-color:#ff1744;">
+            <p style="font-size:11px; color:#8fa0be;">AFFECTED POPULATION</p>
+            <div class="eew-countdown-val" style="color:#ff1744;" id="sarPopVal">{{ sar_data.impact_matrix.affected_population }}</div>
+            <p style="font-size:11px; color:#aaa;">Vulnerable Demographic: {{ sar_data.impact_matrix.vulnerable_demographic }}</p>
+        </div>
+        <div class="eew-city-card" style="border-color:#ffd700;">
+            <p style="font-size:11px; color:#8fa0be;">WATER CONTAMINATION RISK</p>
+            <div class="eew-countdown-val" style="color:#ffd700; font-size:22px; margin-top:12px;" id="sarContamVal">{{ sar_data.impact_matrix.water_contamination_risk }}</div>
+            <p style="font-size:11px; color:#aaa;">Tubewell Turbidity Alert</p>
+        </div>
+    </div>
+
+    <!-- INFRASTRUCTURE AT-RISK MATRIX TABLE -->
+    <div style="background:rgba(0,0,0,0.5); border-radius:12px; padding:12px; margin-top:10px;">
+        <h4 style="font-size:13px; color:#00bfff; margin-bottom:8px;">🚦 Critical Infrastructure At-Risk Status:</h4>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px; font-size:12px;">
+            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
+                <b style="color:#ff7b00;">🛣 Blocked National Highways:</b>
+                <p id="sarHwText" style="color:#ddd; margin-top:4px;">NH-27 (Silchar-Guwahati corridor, km 142-158): <span style="color:#ff1744; font-weight:700;">MONITORED</span></p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
+                <b style="color:#ff1744;">🚆 Submerged Railway Tracks:</b>
+                <p id="sarRailText" style="color:#ddd; margin-top:4px;">N.F. Railway Lumding section: <span style="color:#00e676; font-weight:700;">CLEAR</span></p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
+                <b style="color:#ffd700;">🏥 Cut-Off Villages & Clinics:</b>
+                <p id="sarVillagesText" style="color:#ddd; margin-top:4px;">Cut-Off Villages: <b id="sarVillCount">{{ sar_data.impact_matrix.villages_cut_off }}</b> | Hospitals at Risk: <b id="sarHospCount">{{ sar_data.impact_matrix.hospitals_at_risk }}</b></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 🔥 TOP 10 HIGH RISK GLOBAL & INDIAN ZONES TABLE -->
+<!-- ========================================================================= -->
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+        <h2 style="color:#ff4444; font-size:18px;">🔥 TOP MONITORED SEISMIC ZONES (NCS INDIA + USGS LIVE)</h2>
+        <span style="font-size:12px; color:#8fa0be;">Dual-Stream Geospatial Seismic Telemetry</span>
+    </div>
+
+    <table>
+        <tr>
+            <th>Location / Region</th>
+            <th>Source Agency</th>
+            <th>Magnitude</th>
+            <th>Threat Level</th>
+            <th>Severity Score</th>
+            <th>Tactical Actions</th>
+        </tr>
+        {% for zone in danger_zones %}
+        <tr>
+            <td><b>{{zone.place}}</b></td>
+            <td>
+                {% if "India" in zone.place or "NCS" in zone.place or "Kangra" in zone.place or "Chamoli" in zone.place or "Doda" in zone.place or "Kutch" in zone.place or "Andaman" in zone.place or "Assam" in zone.place %}
+                    <span class="badge badge-ncs">NCS (MoES India) 🇮🇳</span>
+                {% else %}
+                    <span class="badge badge-usgs">USGS Global 🌐</span>
+                {% endif %}
+            </td>
+            <td><b style="color:#ffd700;">{{zone.mag}}</b></td>
+            <td>
+                <span class="badge" style="{% if zone.level == 'CRITICAL' %}border-color:#ff1744;color:#ff1744;{% elif zone.level == 'HIGH' %}border-color:#ff7b00;color:#ff7b00;{% else %}border-color:#00e676;color:#00e676;{% endif %}">
+                    {{zone.level}}
+                </span>
+            </td>
+            <td>{{zone.score}}</td>
+            <td>
+                <button onclick="calculateEEWForQuake('{{zone.place}}', {{zone.mag}}, {{zone.lat|default(32.1)}}, {{zone.lon|default(76.2)}})" class="toggle-btn" style="padding:4px 10px; font-size:11px;">⚡ EEW</button>
+                <button onclick="openCAPModalCustom('{{zone.place}}', {{zone.mag}}, {{zone.lat|default(32.1)}}, {{zone.lon|default(76.2)}})" class="toggle-btn" style="padding:4px 10px; font-size:11px; border-color:#ffd700; color:#ffd700;">📢 CAP</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 📊 INTELLIGENCE GRAPHS SECTION -->
+<!-- ========================================================================= -->
+<div class="card" style="border:1px solid #00bfff;">
+    <h3 style="color:#00bfff; font-size:16px;">📊 Multi-Hazard Intelligence Graphs - SAR + Threat Analytics</h3>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-top:14px;">
+        <div style="background:#000; border-radius:10px; padding:10px; border:1px solid #222;"><p style="font-size:10px; color:#ff7b00;">BACKSCATTER dB (CROSS-TRACK)</p><canvas id="sarCanvas" height="140"></canvas></div>
+        <div style="background:#000; border-radius:10px; padding:10px; border:1px solid #222;"><p style="font-size:10px; color:#00bfff;">FLOOD PROBABILITY %</p><canvas id="floodCanvas" height="140"></canvas></div>
+        <div style="background:#000; border-radius:10px; padding:10px; border:1px solid #222;"><p style="font-size:10px; color:#00e676;">SEISMIC THREAT TREND (7 DAYS)</p><canvas id="threatCanvas" height="140"></canvas></div>
+        <div style="background:#000; border-radius:10px; padding:10px; border:1px solid #222;"><p style="font-size:10px; color:#ffd700;">POLARIZATION VV/VH RATIO</p><canvas id="polCanvas" height="140"></canvas></div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 🧭 NAVIGATION CENTER -->
+<!-- ========================================================================= -->
+<div class="card">
+    <h2 style="font-size:18px;">🧭 Tactical Operations Navigation</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-top:12px;">
+        <a href="/apex" class="toggle-btn" style="border-color:#00bfff; color:#00bfff; background:rgba(0,191,255,0.22); box-shadow:0 0 14px rgba(0,191,255,0.45); font-weight:800;">⚡ APEX Command Hub</a>
+        <a href="/" class="toggle-btn">🏠 Mission Dashboard</a>
+        <a href="/india" class="toggle-btn" style="border-color:#ff9100; color:#ff9100;">🇮🇳 India Strategic Monitor</a>
+        <a href="/sar" class="toggle-btn" style="border-color:#00bfff; color:#00bfff;">🛰 Sentinel-1 SAR Center</a>
+        <a href="/alerts" class="toggle-btn" style="border-color:#ff1744; color:#ff1744;">🚨 Alert Center & CAP</a>
+        <a href="/analytics" class="toggle-btn">📊 Threat Analytics</a>
+        <a href="/history" class="toggle-btn">📜 Incident Database</a>
+        <a href="/trend" class="toggle-btn">📈 Multi-Sensor Trends</a>
+        <a href="/report" class="toggle-btn">📄 Intelligence PDF Report</a>
+        <a href="/logout" class="toggle-btn" style="border-color:#ff4444; color:#ff4444;">🚪 Tactical Logout</a>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 📢 MODAL: ITU-T / NDMA CAP v1.2 ALERT GENERATOR -->
+<!-- ========================================================================= -->
+<div id="capModal" class="modal-overlay">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeCAPModal()">✕</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:24px;">📢</span>
+            <h2 style="color:#ffd700; font-size:20px;">NDMA Sachet Common Alerting Protocol (CAP v1.2) Generator</h2>
+        </div>
+        <p style="font-size:12px; color:#94a3b8; margin:6px 0 14px 0;">
+            Standard OASIS CAP v1.2 / ITU-T Recommendation X.1303 formatted payload ready for Cell-Broadcast & Dissemination.
+        </p>
+
+        <div style="display:flex; gap:10px; margin-bottom:12px;">
+            <button id="capTabXmlBtn" onclick="switchCAPTab('xml')" class="toggle-btn active">XML Format (Official Standard)</button>
+            <button id="capTabJsonBtn" onclick="switchCAPTab('json')" class="toggle-btn">JSON Format (REST API)</button>
+            <button onclick="copyCAPPayload()" class="toggle-btn" style="margin-left:auto; border-color:#00e676; color:#00e676;">📋 Copy Payload</button>
+            <button onclick="downloadCAPFile()" class="toggle-btn" style="border-color:#00bfff; color:#00bfff;">💾 Download XML</button>
+        </div>
+
+        <pre id="capXmlView" style="background:#000; color:#00e676; padding:16px; border-radius:10px; font-family:monospace; font-size:11px; max-height:400px; overflow:auto; border-left:4px solid #ffd700; white-space:pre-wrap;"></pre>
+        <pre id="capJsonView" style="display:none; background:#000; color:#00bfff; padding:16px; border-radius:10px; font-family:monospace; font-size:11px; max-height:400px; overflow:auto; border-left:4px solid #00bfff; white-space:pre-wrap;"></pre>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 📋 MODAL: NDRF TACTICAL DISPATCH REQUISITION ORDER TICKET -->
+<!-- ========================================================================= -->
+<div id="dispatchOrderModal" class="modal-overlay">
+    <div class="modal-box" style="border-color:#00e676; max-width:700px;">
+        <button class="modal-close" onclick="closeDispatchModal()">✕</button>
+        <div style="border-bottom:2px solid #00e676; padding-bottom:10px; margin-bottom:14px; text-align:center;">
+            <p style="font-size:11px; color:#00e676; letter-spacing:1px; font-weight:700;">GOVERNMENT OF INDIA • NATIONAL DISASTER MANAGEMENT AUTHORITY</p>
+            <h2 style="color:#fff; font-size:18px; margin:4px 0;">TACTICAL UNIT DEPLOYMENT REQUISITION ORDER</h2>
+            <p style="font-size:12px; color:#ffd700;" id="dispatchTicketId">TICKET ID: NDMA-TDO-2026-98124</p>
+        </div>
+
+        <div style="font-size:12px; line-height:1.7; color:#cbd5e1;">
+            <p><b>Authority:</b> NDMA Integrated Operations Center (IOC), Ministry of Home Affairs, New Delhi</p>
+            <p><b>Mobilized Unit:</b> <span id="dispUnit" style="color:#00e676; font-weight:700;">14th Bn NDRF (Jakhari, Mandi, HP)</span></p>
+            <p><b>Incident Coordinate:</b> <span id="dispCoords">32.10° N, 76.27° E (Kangra Valley)</span></p>
+            <p><b>Target Distance:</b> <span id="dispDist">82.4 km</span> | <b>Priority Status:</b> <span style="color:#ff1744; font-weight:700;">FLASH-OVERRIDE IMMEDIATE</span></p>
+            <p><b>Estimated Road Convoy ETA:</b> <span id="dispEtaRoad">1.6 Hours</span> | <b>IAF C-130J Airlift ETA:</b> <span id="dispEtaAir">45 Mins</span></p>
+            <p><b>Tactical VHF Net:</b> <code>148.650 MHz (NDRF Net-1)</code> | <b>Inmarsat Call Code:</b> <code>INM-NDRF-IOC-04</code></p>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
+            <p><b>Designated First-Response Equipment:</b></p>
+            <ul style="margin-left:20px; color:#00bfff;">
+                <li>Collapsed Structure Search & Rescue (CSSR) Diamond Cutters (12 Sets)</li>
+                <li>Seismic Acoustic Life Detectors & Thermal Cameras (8 Units)</li>
+                <li>Canine K9 Search Dogs (4 Teams)</li>
+                <li>Mobile Inflatable Medical Treatment Tents (2 Units)</li>
+            </ul>
+        </div>
+
+        <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; color:#8fa0be;">Signed digitally by NDMA Duty Officer: NDMA-PRAHARIX-SEC-AUTH</span>
+            <button onclick="closeDispatchModal()" class="toggle-btn" style="background:#00e676; color:#000; border-color:#00e676;">CONFIRM RECEIPT</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT LOGIC ENGINE -->
+<!-- ========================================================================= -->
+<script>
+function updateClock(){document.getElementById("clock").innerHTML=new Date().toLocaleString();}
+setInterval(updateClock,1000);updateClock();
+
+// SERVER-SIDE JSON DATA BINDINGS
+const earthquakesData = {{ earthquakes | tojson }};
+const ncsEventsData = {{ ncs_events | tojson }};
+const eewScenarios = {{ eew_scenarios | tojson }};
+const initialEEW = {{ default_eew | tojson }};
+const ndrfBattalions = {{ ndrf_battalions | tojson }};
+const reliefCamps = {{ relief_camps | tojson }};
+const seismicZones = {{ seismic_zones | tojson }};
+const cycloneTracks = {{ cyclone_tracks | tojson }};
+const radarStations = {{ radar_stations | tojson }};
+const meshTelemetry = {{ mesh_telemetry | tojson }};
+let currentCAPData = {{ sample_cap | tojson }};
+
+// ==========================================
+// 1. BILINGUAL DICTIONARY & LANGUAGE TOGGLE
+// ==========================================
+let currentLang = localStorage.getItem('praharix_lang') || 'en';
+
+const i18nDictionary = {
+    en: {
+        nav_title: "PRAHARIX 2.0 NATIONAL COMMAND CENTER",
+        nav_sub: "TACTICAL DECISION-SUPPORT • NDMA & ITU-T COMPLIANT",
+        crit_banner_title: "CRITICAL HAZARD DETECTED!",
+        silence_btn: "SILENCE SIREN",
+        sitrep_btn: "AI SITREP BRIEFING",
+        siren_muted: "SIREN: MUTED",
+        siren_armed: "SIREN: ARMED",
+        siren_test: "🚨 TEST AUDIO",
+        header_sub: "National Strategic Multi-Hazard Command & Decision-Support System",
+        header_desc: "Integrated Earth Observation • Physics EEW • Tactical Resource Dispatch Engine",
+        card_weather_title: "🌦 Live Meteorological",
+        feels_like: "Feels Like",
+        humidity: "Humidity",
+        wind: "Wind",
+        precip: "Rain",
+        card_sar_title: "🛰 Sentinel-1 SAR AI",
+        card_seismic_title: "🇮🇳 NCS & USGS Seismic",
+        events_24h: "Events Monitored",
+        card_command_title: "🛡 Tactical Status",
+        eew_title: "Earthquake Early Warning (EEW) & P-Wave Physics Lead-Time Simulator",
+        eew_sub: "Physics calculation: Primary P-wave (Vp ≈ 6.0 km/s) vs Destructive Shear S-wave (Vs ≈ 3.5 km/s). City lead-time countdown & automated SCADA triggers.",
+        eew_run_btn: "RUN EEW SIMULATION",
+        eew_cap_btn: "GENERATE NDMA CAP ALERT",
+        eew_arrival_title: "Estimated Destructive S-Wave Arrival & Lead-Time Countdowns",
+        eew_interlock_title: "Automated Critical Infrastructure SCADA Interlocks & Early Action Protocols",
+        map_title: "National Tactical Multi-Hazard GIS Command Map",
+        map_sub: "ISRO Bhuvan / Satellite Baselayers • Indian Seismic Zones V & IV • IMD Cyclone & Doppler Radar • 16 NDRF Battalions",
+        ndrf_engine_title: "Tactical NDRF & SDRF Rapid Asset Dispatch Engine",
+        ndrf_engine_sub: "Official register of India's 16 NDRF Battalions. Nearest unit ETA calculator, equipment packages, and safe relief camp allocator.",
+        ndrf_dispatch_btn: "DISPATCH REQUISITION ORDER",
+        sar_impact_title: "Advanced SAR AI: Automated Flood Inundation & Population Impact Matrix",
+        sar_impact_sub: "Sentinel-1 SAR C-Band Synthetic Aperture Radar. Water mask delta-sigma (Δσ⁰) extraction & critical infrastructure exposure."
+    },
+    hi: {
+        nav_title: "प्रहारी-एक्स २.० राष्ट्रीय आपदा कमान केंद्र",
+        nav_sub: "सामरिक निर्णय-समर्थन प्रणाली • एनडीएमए एवं आईटीयू-टी अनुरूप",
+        crit_banner_title: "गंभीर आपदा चेतावनी सक्रिय!",
+        silence_btn: "सायरन बंद करें",
+        sitrep_btn: "एआई सिटरिप ब्रीफिंग",
+        siren_muted: "सायरन: मूक",
+        siren_armed: "सायरन: सक्रिय",
+        siren_test: "🚨 ऑडियो परीक्षण",
+        header_sub: "राष्ट्रीय सामरिक बहु-आपदा कमान एवं निर्णय-समर्थन प्रणाली",
+        header_desc: "एकीकृत उपग्रह निगरानी • भौतिकी भूकंप प्रारंभिक चेतावनी • एनडीआरएफ बल संसाधन आवंटन",
+        card_weather_title: "🌦 सजीव मौसम पूर्वानुमान",
+        feels_like: "अनुभूत तापमान",
+        humidity: "आर्द्रता",
+        wind: "हवा",
+        precip: "वर्षा",
+        card_sar_title: "🛰 सेंटिनल-१ सार कृत्रिम बुद्धिमत्ता",
+        card_seismic_title: "🇮🇳 राष्ट्रीय भूकंप विज्ञान केंद्र व यूएसजीएस",
+        events_24h: "घटनाएं ट्रैक की गईं",
+        card_command_title: "🛡 राष्ट्रीय सुरक्षा स्थिति",
+        eew_title: "भूकंप प्रारंभिक चेतावनी (EEW) एवं पी-तरंग भौतिकी समय गणना",
+        eew_sub: "भौतिकी समीकरण: प्राथमिक पी-वेव (६ किमी/सेकंड) बनाम विनाशकारी एस-वेव (३.५ किमी/सेकंड)। शहरवार चेतावनी उल्टी गिनती व स्वचालित संरक्षा प्रणाली।",
+        eew_run_btn: "चेतावनी सिमुलेशन प्रारंभ",
+        eew_cap_btn: "एनडीएमए सीएपी अलर्ट बनाएं",
+        eew_arrival_title: "अनुमानित विनाशकारी एस-तरंग आगमन एवं चेतावनी उल्टी गिनती",
+        eew_interlock_title: "स्वचालित महत्वपूर्ण अवसंरचना संरक्षा एवं त्वरित शट-ऑफ प्रोटोकॉल",
+        map_title: "राष्ट्रीय सामरिक बहु-आपदा जीआईएस कमान मानचित्र",
+        map_sub: "इसरो भुवन / उपग्रह बेसलेयर्स • भारतीय भूकंप क्षेत्र ५ व ४ • आईएमडी चक्रवात व रडार • १६ एनडीआरएफ बटालियन",
+        ndrf_engine_title: "सामरिक एनडीआरएफ एवं एसडीआरएफ त्वरित संसाधन प्रेषण प्रणाली",
+        ndrf_engine_sub: "भारत की १६ एनडीआरएफ बटालियनों का आधिकारिक मानचित्र। निकटतम बटालियन आगमन समय, राहत उपकरण एवं सुरक्षित शिविर।",
+        ndrf_dispatch_btn: "प्रेषण अधियाचन आदेश जारी करें",
+        sar_impact_title: "उन्नत सार एआई: स्वचालित बाढ़ जलभराव एवं जनसंख्या प्रभाव मैट्रिक्स",
+        sar_impact_sub: "सेंटिनल-१ सार सी-बैंड रडार। जल विस्तार डेल्टा-सिग्मा (Δσ⁰) निष्कर्षण एवं महत्वपूर्ण अवसंरचना प्रभाव।"
+    }
+};
+
+function applyLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('praharix_lang', lang);
+    const dict = i18nDictionary[lang] || i18nDictionary.en;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) el.textContent = dict[key];
+    });
+
+    const flagSpan = document.getElementById('lang-flag');
+    const labelSpan = document.getElementById('lang-label');
+    if (lang === 'hi') {
+        flagSpan.textContent = '🇬🇧';
+        labelSpan.textContent = 'English (EN)';
+    } else {
+        flagSpan.textContent = '🇮🇳';
+        labelSpan.textContent = 'हिन्दी (HI)';
+    }
+}
+
+function toggleLanguage() {
+    applyLanguage(currentLang === 'en' ? 'hi' : 'en');
+}
+
+// ==========================================
+// 2. AI VOICE SITREP (SPEECH SYNTHESIS)
+// ==========================================
+let isSpeaking = false;
+function triggerVoiceSITREP() {
+    if (!('speechSynthesis' in window)) {
+        alert("Web Speech synthesis not supported in this browser.");
+        return;
+    }
+
+    if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+        document.getElementById('sitrep-wave').style.display = 'none';
+        return;
+    }
+
+    fetch(`/api/sitrep/text?lang=${currentLang}`)
+        .then(r => r.json())
+        .then(d => {
+            const utter = new SpeechSynthesisUtterance(d.text);
+            utter.rate = 1.0;
+            utter.pitch = 1.0;
+            if (currentLang === 'hi') {
+                utter.lang = 'hi-IN';
+            } else {
+                utter.lang = 'en-US';
+            }
+
+            document.getElementById('sitrep-wave').style.display = 'inline-flex';
+            isSpeaking = true;
+
+            utter.onend = () => {
+                isSpeaking = false;
+                document.getElementById('sitrep-wave').style.display = 'none';
+            };
+            utter.onerror = () => {
+                isSpeaking = false;
+                document.getElementById('sitrep-wave').style.display = 'none';
+            };
+
+            window.speechSynthesis.speak(utter);
+        })
+        .catch(err => {
+            console.error("SITREP error:", err);
+        });
+}
+
+// ==========================================
+// 3. RESILIENT OFFLINE MESH SIMULATOR
+// ==========================================
+let isMeshActive = false;
+function toggleMeshMode() {
+    isMeshActive = !isMeshActive;
+    const btn = document.getElementById('btn-mesh-toggle');
+    const hud = document.getElementById('meshHudBar');
+    const txt = document.getElementById('mesh-text');
+
+    if (isMeshActive) {
+        btn.classList.add('btn-mesh-active');
+        txt.textContent = 'MESH ACTIVE: LORA';
+        hud.style.display = 'flex';
+    } else {
+        btn.classList.remove('btn-mesh-active');
+        txt.textContent = 'MESH MODE: CLOUD';
+        hud.style.display = 'none';
+    }
+}
+
+// ==========================================
+// 4. EEW P-WAVE & S-WAVE SIMULATOR LOGIC
+// ==========================================
+let currentEEWData = initialEEW;
+let eewCountdownInterval = null;
+
+function renderEEWConsole(data) {
+    currentEEWData = data;
+    document.getElementById('eewBannerPlace').textContent = `${data.event_place} (M${data.magnitude})`;
+    document.getElementById('eewBannerDepth').textContent = `${data.depth_km} km`;
+    if (data.scenario_meta) {
+        document.getElementById('eewBannerFault').textContent = data.scenario_meta.fault;
+    }
+
+    const grid = document.getElementById('eewCityGrid');
+    grid.innerHTML = '';
+
+    data.lead_time_results.slice(0, 6).forEach((city, idx) => {
+        const card = document.createElement('div');
+        card.className = 'eew-city-card';
+        card.style.borderColor = city.color;
+        card.innerHTML = `
+            <div style="font-size:11px; color:#94a3b8; font-weight:700;">${city.city.toUpperCase()}</div>
+            <div class="eew-countdown-val" id="countdown-${idx}" style="color:${city.color};">${city.lead_time_s}s</div>
+            <div style="font-size:10px; color:#aaa;">Dist: ${city.distance_km} km | S-Wave: ${city.s_wave_arrival_s}s</div>
+            <div style="font-size:10px; color:${city.color}; margin-top:4px;"><b>${city.intensity}</b></div>
+        `;
+        grid.appendChild(card);
+    });
+
+    const interlocksBox = document.getElementById('interlocksGrid');
+    interlocksBox.innerHTML = '';
+    data.interlocks.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'interlock-badge';
+        div.innerHTML = `
+            <b>${item.icon} ${item.system}</b><br>
+            <span style="color:#00e676;">STATUS: ${item.action}</span>
+            <span style="color:#aaa; float:right;">Latency: ${item.latency}</span>
+        `;
+        interlocksBox.appendChild(div);
+    });
+}
+
+function loadEEWScenario() {
+    const sc = document.getElementById('eewScenarioSelect').value;
+    fetch(`/api/eew/simulate?scenario=${sc}`)
+        .then(r => r.json())
+        .then(d => {
+            renderEEWConsole(d);
+            updateNDRFForLocation(d.lat, d.lon);
+            drawEEWWavesOnMap(d.lat, d.lon);
+        });
+}
+
+function startEEWCountdownSimulation() {
+    if (eewCountdownInterval) clearInterval(eewCountdownInterval);
+
+    document.getElementById('eewSimStatus').textContent = '🚨 COUNTDOWN PROPAGATING';
+    document.getElementById('eewSimStatus').style.background = '#ff1744';
+    document.getElementById('eewSimStatus').style.color = '#fff';
+
+    // Play siren chime if user armed siren
+    if (isSirenArmed) playSirenAudio();
+
+    // Trigger visual wavefront on map
+    drawEEWWavesOnMap(currentEEWData.lat, currentEEWData.lon);
+
+    eewCountdownInterval = setInterval(() => {
+        let allZero = true;
+        currentEEWData.lead_time_results.slice(0, 6).forEach((city, idx) => {
+            const el = document.getElementById(`countdown-${idx}`);
+            if (el) {
+                let val = parseFloat(el.textContent.replace('s', ''));
+                if (val > 0) {
+                    val = Math.max(0, Math.round((val - 1) * 10) / 10);
+                    el.textContent = `${val}s`;
+                    allZero = false;
+                } else {
+                    el.textContent = 'ARRIVED! ⚠️';
+                    el.style.color = '#ff1744';
+                }
+            }
+        });
+
+        if (allZero) {
+            clearInterval(eewCountdownInterval);
+            document.getElementById('eewSimStatus').textContent = '● WAVE PROPAGATION COMPLETE';
+            document.getElementById('eewSimStatus').style.background = '#ffd700';
+            document.getElementById('eewSimStatus').style.color = '#000';
+        }
+    }, 1000);
+}
+
+function calculateEEWForQuake(place, mag, lat, lon) {
+    fetch(`/api/eew/simulate?lat=${lat}&lon=${lon}&mag=${mag}&depth=15&place=${encodeURIComponent(place)}`)
+        .then(r => r.json())
+        .then(d => {
+            renderEEWConsole(d);
+            updateNDRFForLocation(lat, lon);
+            drawEEWWavesOnMap(lat, lon);
+            window.scrollTo({top: document.querySelector('.tactical-console').offsetTop - 60, behavior: 'smooth'});
+        });
+}
+
+// Initial render
+renderEEWConsole(initialEEW);
+
+// ==========================================
+// 5. NDRF DISPATCH ALLOCATOR LOGIC
+// ==========================================
+function updateNDRFForLocation(lat, lon) {
+    fetch(`/api/ndrf/dispatch?lat=${lat}&lon=${lon}&threat_level=CRITICAL&hazard_type=EARTHQUAKE`)
+        .then(r => r.json())
+        .then(d => {
+            const p = d.primary_battalion;
+            document.getElementById('ndrfPrimaryName').textContent = `${p.name} (${p.hq}, ${p.state})`;
+            document.getElementById('ndrfPrimaryDist').textContent = `${p.distance_km} km`;
+            document.getElementById('ndrfPrimaryRoad').textContent = `${p.eta_road_hours} Hours`;
+            document.getElementById('ndrfPrimaryAir').textContent = `${p.eta_air_hours} Hours`;
+            document.getElementById('ndrfPrimaryContact').textContent = p.contact;
+
+            const s = d.secondary_battalion;
+            document.getElementById('ndrfSecondaryName').textContent = `${s.name} (${s.hq})`;
+            document.getElementById('ndrfSecondaryDist').textContent = `${s.distance_km} km`;
+
+            const assetsUl = document.getElementById('ndrfAssetsList');
+            assetsUl.innerHTML = '';
+            d.required_equipment.forEach(eq => {
+                const li = document.createElement('li');
+                li.textContent = eq;
+                assetsUl.appendChild(li);
+            });
+
+            if (d.designated_relief_camps && d.designated_relief_camps.length > 0) {
+                const c = d.designated_relief_camps[0];
+                document.getElementById('reliefCampInfo').innerHTML = `
+                    <b>${c.name}</b> (${c.city}) | Distance: <b>${c.distance_km} km</b> | Total Capacity: <b>${c.capacity.toLocaleString()}</b> | Available Beds: <b style="color:#00e676;">${c.vacant.toLocaleString()} Vacant</b> | Medical: <b>${c.medical_unit}</b>
+                `;
+            }
+
+            document.getElementById('dispatchTicketId').textContent = `TICKET ID: ${d.ticket_id}`;
+            document.getElementById('dispUnit').textContent = `${p.name} (${p.hq}, ${p.state})`;
+            document.getElementById('dispCoords').textContent = `${lat.toFixed(2)}° N, ${lon.toFixed(2)}° E`;
+            document.getElementById('dispDist').textContent = `${p.distance_km} km`;
+            document.getElementById('dispEtaRoad').textContent = `${p.eta_road_hours} Hours`;
+            document.getElementById('dispEtaAir').textContent = `${p.eta_air_hours} Hours`;
+        });
+}
+
+function dispatchOrderNow() {
+    document.getElementById('dispatchOrderModal').style.display = 'flex';
+}
+function closeDispatchModal() {
+    document.getElementById('dispatchOrderModal').style.display = 'none';
+}
+
+// ==========================================
+// 6. SAR INUNDATION SIMULATION TOGGLE
+// ==========================================
+let isSarSurge = false;
+function toggleSarSimulation() {
+    isSarSurge = !isSarSurge;
+    const btnText = document.getElementById('sarSimText');
+    btnText.textContent = isSarSurge ? "RESET TO BASELINE MONITORING" : "SIMULATE RIVER BASIN FLOOD SURGE";
+
+    fetch(`/api/sar/simulate?flood=${isSarSurge}`)
+        .then(r => r.json())
+        .then(d => {
+            const m = d.impact_matrix;
+            document.getElementById('sarDeltaVal').textContent = m.delta_sigma_0;
+            document.getElementById('sarInundatedVal').textContent = `${m.inundated_area_km2} km²`;
+            document.getElementById('sarPopVal').textContent = m.affected_population.toLocaleString();
+            document.getElementById('sarContamVal').textContent = m.water_contamination_risk;
+            document.getElementById('sarVillCount').textContent = m.villages_cut_off;
+            document.getElementById('sarHospCount').textContent = m.hospitals_at_risk;
+
+            if (isSarSurge) {
+                document.getElementById('sarHwText').innerHTML = `NH-27 (Silchar-Guwahati corridor, km 142-158): <span style="color:#ff1744; font-weight:700;">IMPASSABLE</span>`;
+                document.getElementById('sarRailText').innerHTML = `N.F. Railway Lumding section: <span style="color:#ff1744; font-weight:700;">SUSPENDED (18.4 km underwater)</span>`;
+            } else {
+                document.getElementById('sarHwText').innerHTML = `NH-27 (Silchar-Guwahati corridor, km 142-158): <span style="color:#00e676; font-weight:700;">OPEN / MONITORED</span>`;
+                document.getElementById('sarRailText').innerHTML = `N.F. Railway Lumding section: <span style="color:#00e676; font-weight:700;">CLEAR</span>`;
+            }
+        });
+}
+
+// ==========================================
+// 7. ITU-T / NDMA CAP v1.2 MODAL LOGIC
+// ==========================================
+function openCAPModalForCurrent() {
+    fetch(`/api/cap/alert?lat=${currentEEWData.lat}&lon=${currentEEWData.lon}&mag=${currentEEWData.magnitude}&place=${encodeURIComponent(currentEEWData.event_place)}`)
+        .then(r => r.json())
+        .then(d => {
+            currentCAPData = d;
+            document.getElementById('capXmlView').textContent = d.xml;
+            document.getElementById('capJsonView').textContent = JSON.stringify(d.json, null, 2);
+            document.getElementById('capModal').style.display = 'flex';
+        });
+}
+
+function openCAPModalCustom(place, mag, lat, lon) {
+    fetch(`/api/cap/alert?lat=${lat}&lon=${lon}&mag=${mag}&place=${encodeURIComponent(place)}`)
+        .then(r => r.json())
+        .then(d => {
+            currentCAPData = d;
+            document.getElementById('capXmlView').textContent = d.xml;
+            document.getElementById('capJsonView').textContent = JSON.stringify(d.json, null, 2);
+            document.getElementById('capModal').style.display = 'flex';
+        });
+}
+
+function closeCAPModal() {
+    document.getElementById('capModal').style.display = 'none';
+}
+
+function switchCAPTab(tab) {
+    if (tab === 'xml') {
+        document.getElementById('capXmlView').style.display = 'block';
+        document.getElementById('capJsonView').style.display = 'none';
+        document.getElementById('capTabXmlBtn').classList.add('active');
+        document.getElementById('capTabJsonBtn').classList.remove('active');
+    } else {
+        document.getElementById('capXmlView').style.display = 'none';
+        document.getElementById('capJsonView').style.display = 'block';
+        document.getElementById('capTabJsonBtn').classList.add('active');
+        document.getElementById('capTabXmlBtn').classList.remove('active');
+    }
+}
+
+function copyCAPPayload() {
+    const isXml = document.getElementById('capXmlView').style.display !== 'none';
+    const text = isXml ? currentCAPData.xml : JSON.stringify(currentCAPData.json, null, 2);
+    navigator.clipboard.writeText(text).then(() => {
+        alert("CAP Alert payload copied to clipboard!");
+    });
+}
+
+function downloadCAPFile() {
+    window.location.href = `/api/cap/download?event_id=${currentCAPData.identifier}&lat=${currentEEWData.lat}&lon=${currentEEWData.lon}&mag=${currentEEWData.magnitude}&place=${encodeURIComponent(currentEEWData.event_place)}`;
+}
+
+// ==========================================
+// 8. LEAFLET 2D MAP & STRATEGIC OVERLAYS
+// ==========================================
+const map2d = L.map('map').setView([23.5, 78.9], 5);
+
+// Baselayers
+// Baselayers: ISRO Bhuvan Satellite (Default) & Global Street Map (Tactical Dark Vector Deleted)
+const isroBhuvanSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'ISRO Bhuvan / NRSC & ESRI World Satellite Imagery',
+    maxZoom: 19
+}).addTo(map2d);
+
+const streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'OpenStreetMap Street Map Navigation',
+    maxZoom: 19
+});
+
+L.control.layers({
+    "🛰️ ISRO Bhuvan Satellite": isroBhuvanSatellite,
+    "🗺️ Street Map": streetMap
+}, null, { position: 'topright', collapsed: false }).addTo(map2d);
+
+// Layer Groups
+const layerSeismicZones = L.layerGroup().addTo(map2d);
+const layerCyclone = L.layerGroup().addTo(map2d);
+const layerNDRF = L.layerGroup().addTo(map2d);
+const layerEarthquakes = L.layerGroup().addTo(map2d);
+const layerEEWWaves = L.layerGroup().addTo(map2d);
+
+// Render Earthquakes (Dual USGS + NCS)
+earthquakesData.forEach(eq => {
+    const isNCS = eq.source && eq.source.includes('NCS');
+    const col = isNCS ? '#ff9100' : (eq.threat_level === 'CRITICAL' ? '#ff1744' : (eq.threat_level === 'HIGH' ? '#ff9100' : '#00e676'));
+    const radius = Math.max(eq.threat_score * 3500, 22000);
+
+    L.circle([eq.lat, eq.lon], {
+        radius: radius,
+        color: col,
+        fillColor: col,
+        fillOpacity: 0.5,
+        weight: isNCS ? 2.5 : 1.5
+    }).addTo(layerEarthquakes).bindPopup(`
+        <div style="font-family:'Segoe UI',sans-serif; min-width:200px; color:#111;">
+            <b style="font-size:14px;">${eq.place}</b><br>
+            <span style="font-size:11px; font-weight:700; color:${col};">${eq.source || 'USGS'}</span><br>
+            <b>Magnitude:</b> ${eq.mag} | <b>Depth:</b> ${eq.depth} km<br>
+            <b>Threat:</b> <span style="font-weight:700; color:${col};">${eq.threat_level}</span><br>
+            <small style="color:#555;">${eq.time}</small><br>
+            <div style="margin-top:8px;">
+                <button onclick="calculateEEWForQuake('${eq.place}', ${eq.mag}, ${eq.lat}, ${eq.lon})" style="background:#ff1744; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">⚡ EEW</button>
+                <button onclick="openCAPModalCustom('${eq.place}', ${eq.mag}, ${eq.lat}, ${eq.lon})" style="background:#ff9100; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">📢 CAP</button>
+            </div>
+        </div>
+    `);
+});
+
+// Render Indian Seismic Zones V & IV Polygons
+function drawSeismicZones() {
+    seismicZones.zone_v.forEach(zone => {
+        L.polygon(zone.coords, {
+            color: zone.color,
+            fillColor: zone.color,
+            fillOpacity: 0.22,
+            weight: 2,
+            dashArray: '4, 4'
+        }).addTo(layerSeismicZones).bindPopup(`
+            <b style="color:#ff1744;">${zone.name}</b><br>
+            Seismic Factor (IS 1893): <b>${zone.factor} (Very High Damage Risk)</b>
+        `);
+    });
+
+    seismicZones.zone_iv.forEach(zone => {
+        L.polygon(zone.coords, {
+            color: zone.color,
+            fillColor: zone.color,
+            fillOpacity: 0.16,
+            weight: 1.8,
+            dashArray: '3, 3'
+        }).addTo(layerSeismicZones).bindPopup(`
+            <b style="color:#ff9100;">${zone.name}</b><br>
+            Seismic Factor (IS 1893): <b>${zone.factor} (High Damage Risk)</b>
+        `);
+    });
+}
+drawSeismicZones();
+
+// Render IMD Cyclone Tracks & Doppler Radars
+function drawCycloneAndRadars() {
+    cycloneTracks.forEach(c => {
+        L.circleMarker([c.center_lat, c.center_lon], {
+            radius: 14,
+            color: '#ffd700',
+            fillColor: '#ff7b00',
+            fillOpacity: 0.8,
+            weight: 3
+        }).addTo(layerCyclone).bindPopup(`
+            <b style="color:#ff7b00; font-size:14px;">🌀 ${c.system_name}</b><br>
+            Category: <b>${c.category}</b><br>
+            Max Wind: <b>${c.max_wind_kmh} km/h</b> | Pressure: <b>${c.pressure_hpa} hPa</b><br>
+            Movement: <b>${c.movement}</b><br>
+            Storm Surge: <b>${c.storm_surge_m}</b><br>
+            Alert States: <b>${c.alert_states.join(', ')}</b>
+        `);
+    });
+
+    radarStations.forEach(r => {
+        L.circle([r.lat, r.lon], {
+            radius: r.range_km * 1000,
+            color: '#00bfff',
+            fillColor: '#00bfff',
+            fillOpacity: 0.05,
+            weight: 1
+        }).addTo(layerCyclone).bindPopup(`
+            <b>📡 ${r.name} (${r.code})</b><br>
+            Doppler Weather Radar: <b>${r.status}</b><br>
+            Coverage Radius: <b>${r.range_km} km</b>
+        `);
+
+        L.circleMarker([r.lat, r.lon], {
+            radius: 6,
+            color: '#00bfff',
+            fillColor: '#fff',
+            fillOpacity: 0.9
+        }).addTo(layerCyclone);
+    });
+}
+drawCycloneAndRadars();
+
+// Render 16 NDRF Battalions
+function drawNDRFBattalions() {
+    ndrfBattalions.forEach(bn => {
+        const marker = L.circleMarker([bn.lat, bn.lon], {
+            radius: 8,
+            color: '#00e676',
+            fillColor: '#111827',
+            fillOpacity: 0.9,
+            weight: 2.5
+        }).addTo(layerNDRF);
+
+        marker.bindPopup(`
+            <div style="font-family:'Segoe UI',sans-serif; color:#111;">
+                <b style="color:#00e676; font-size:14px;">🚒 ${bn.name}</b><br>
+                HQ: <b>${bn.hq} (${bn.state})</b><br>
+                Hotline: <b>${bn.contact}</b><br>
+                Role: <b>${bn.role}</b><br>
+                Assets: <small>${bn.assets.join(', ')}</small><br>
+                <button onclick="updateNDRFForLocation(${bn.lat}, ${bn.lon}); dispatchOrderNow();" style="margin-top:6px; background:#00e676; color:#000; border:none; padding:4px 8px; border-radius:4px; font-weight:700; cursor:pointer;">Mobilize Unit</button>
+            </div>
+        `);
+    });
+}
+drawNDRFBattalions();
+
+// Expanding Wavefront Animation on Leaflet
+function drawEEWWavesOnMap(lat, lon) {
+    layerEEWWaves.clearLayers();
+    map2d.setView([lat, lon], 6);
+
+    // Epicenter Marker
+    L.circleMarker([lat, lon], {
+        radius: 12,
+        color: '#fff',
+        fillColor: '#ff1744',
+        fillOpacity: 1,
+        weight: 3
+    }).addTo(layerEEWWaves).bindPopup("<b>EPICENTER</b>").openPopup();
+
+    // Primary P-Wave Circle (6.0 km/s - harmless compressional)
+    const pWaveCircle = L.circle([lat, lon], {
+        radius: 50000,
+        color: '#00bfff',
+        fillColor: '#00bfff',
+        fillOpacity: 0.08,
+        weight: 2,
+        dashArray: '5, 5'
+    }).addTo(layerEEWWaves);
+
+    // Secondary S-Wave Circle (3.5 km/s - destructive shear)
+    const sWaveCircle = L.circle([lat, lon], {
+        radius: 20000,
+        color: '#ff1744',
+        fillColor: '#ff1744',
+        fillOpacity: 0.15,
+        weight: 2.5
+    }).addTo(layerEEWWaves);
+
+    let waveRadP = 50000;
+    let waveRadS = 20000;
+    const animInterval = setInterval(() => {
+        waveRadP += 18000;
+        waveRadS += 10500;
+        pWaveCircle.setRadius(waveRadP);
+        sWaveCircle.setRadius(waveRadS);
+        if (waveRadP > 450000) {
+            clearInterval(animInterval);
+        }
+    }, 400);
+}
+
+// Layer Toggle Handlers
+function toggleLayerSeismicZones() {
+    const chk = document.getElementById('chkSeismicZones').checked;
+    if (chk) map2d.addLayer(layerSeismicZones); else map2d.removeLayer(layerSeismicZones);
+}
+function toggleLayerCyclone() {
+    const chk = document.getElementById('chkCyclone').checked;
+    if (chk) map2d.addLayer(layerCyclone); else map2d.removeLayer(layerCyclone);
+}
+function toggleLayerNDRF() {
+    const chk = document.getElementById('chkNDRF').checked;
+    if (chk) map2d.addLayer(layerNDRF); else map2d.removeLayer(layerNDRF);
+}
+function toggleLayerFloodMask() {
+    // Toggles flood visualization circles
+}
+
+// ==========================================
+// 9. 3D GLOBE ENGINE INTEGRATION
+// ==========================================
+let myGlobe;
+function init3D(){
+    if(myGlobe) return;
+    myGlobe = Globe()(document.getElementById('map-3d'))
+        .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
+        .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+        .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+        .pointsData(earthquakesData.map(eq => ({
+            lat: eq.lat,
+            lng: eq.lon,
+            size: Math.max(eq.mag * 0.8, 1.4),
+            color: eq.threat_level === 'CRITICAL' ? '#ff1744' : (eq.threat_level === 'HIGH' ? '#ff9100' : '#00e676'),
+            label: `${eq.place} | Mag: ${eq.mag} | ${eq.threat_level}`
+        })))
+        .pointAltitude(d => d.size * 0.08)
+        .pointColor('color')
+        .pointRadius('size')
+        .pointLabel('label');
+    myGlobe.controls().autoRotate = true;
+    myGlobe.controls().autoRotateSpeed = 0.5;
+    myGlobe.pointOfView({ lat: 22, lng: 79, altitude: 2.2 });
+}
+
+function show3D(){
+    document.getElementById('map').style.display='none';
+    document.getElementById('map-3d').style.display='block';
+    document.getElementById('btn3d').classList.add('active');
+    document.getElementById('btn2d').classList.remove('active');
+    init3D();
+}
+
+function show2D(){
+    document.getElementById('map-3d').style.display='none';
+    document.getElementById('map').style.display='block';
+    document.getElementById('btn2d').classList.add('active');
+    document.getElementById('btn3d').classList.remove('active');
+    setTimeout(()=>{ map2d.invalidateSize(); }, 200);
+}
+
+// ==========================================
+// 10. THREE.JS BACKGROUND MATRIX
+// ==========================================
+</script>
+<script type="module">
+import * as THREE from 'three';
+const canvas = document.getElementById('bg-canvas');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({canvas, alpha:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+const geometry = new THREE.SphereGeometry(15, 32, 32);
+const material = new THREE.MeshBasicMaterial({color:0x00bfff, wireframe:true, transparent:true, opacity:0.12});
+const sphere = new THREE.Mesh(geometry, material);
+scene.add(sphere);
+const starsGeo = new THREE.BufferGeometry();
+const starsCount = 2000;
+const posArray = new Float32Array(starsCount*3);
+for(let i=0;i<starsCount*3;i++){posArray[i]=(Math.random()-0.5)*100;}
+starsGeo.setAttribute('position', new THREE.BufferAttribute(posArray,3));
+const starsMat = new THREE.PointsMaterial({size:0.2, color:0xffffff, transparent:true, opacity:0.8});
+const stars = new THREE.Points(starsGeo, starsMat);
+scene.add(stars);
+camera.position.z = 30;
+function animate(){
+ requestAnimationFrame(animate);
+ sphere.rotation.y += 0.0012;
+ sphere.rotation.x += 0.0004;
+ stars.rotation.y += 0.0002;
+ renderer.render(scene, camera);
+}
+animate();
+window.addEventListener('resize', ()=>{
+    camera.aspect=window.innerWidth/window.innerHeight; 
+    camera.updateProjectionMatrix(); 
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+
+
+
+
+
+
+</div> <!-- /#hq-main-view -->
+
+<!-- UNIFIED EMBEDDED PORTAL CONTAINER (LOADS ANY PORTAL IN THE SAME LINK) -->
+<div id="portal-frame-container" style="display: none; width: 100%; min-height: calc(100vh - 120px); background: #050816; position: relative;">
+    <div style="background: #0b1329; border-bottom: 1px solid #1e293b; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" onclick="window.openUnifiedPortal('hq', '/')" style="background: rgba(0,191,255,0.2); border: 1px solid #00bfff; color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer;">
+                ◀ RETURN TO NATIONAL COMMAND HQ
+            </button>
+            <span id="activePortalIndicator" style="font-size: 12px; color: #38bdf8; font-weight: bold;"></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" onclick="document.getElementById('portal-frame').contentWindow.location.reload()" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.2); color: #cbd5e1; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+                🔄 Reload Portal
+            </button>
+        </div>
+    </div>
+    <div id="portal-loading-indicator" style="position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); z-index: 100; background: rgba(5,10,24,0.95); padding: 14px 28px; border-radius: 30px; border: 2px solid #00bfff; color: #00bfff; font-size: 14px; font-weight: bold; display: none; box-shadow: 0 0 30px rgba(0,191,255,0.5);">
+        ⚡ INITIALIZING COMMAND TELEMETRY...
+    </div>
+    <iframe id="portal-frame" src="about:blank" style="width: 100%; height: calc(100vh - 160px); border: none; background: #050816; display: block;" allowfullscreen></iframe>
+</div>
+
+<!-- TACTICAL PORTAL SWITCHING ENGINE SCRIPT -->
+<script>
+window.openUnifiedPortal = function(portalKey, url) {
+    console.log("Tactical Portal Switch Requested ->", portalKey, url);
+    var hqView = document.getElementById('hq-main-view');
+    var container = document.getElementById('portal-frame-container');
+    var frame = document.getElementById('portal-frame');
+    var loading = document.getElementById('portal-loading-indicator');
+    var popout = document.getElementById('portalExternalBtn');
+    var indicator = document.getElementById('activePortalIndicator');
+
+    // Update active tab buttons
+    document.querySelectorAll('.tactical-portal-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    var activeTab = document.getElementById('portaltab-' + portalKey);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    }
+
+    var titles = {
+        'hq': 'National Command Center HQ',
+        'predict': 'AI Predictive & Early Warning Engine',
+        'govt': 'Government Operations & District EOC Panel',
+        'global': 'Global Disaster Grid & International Surveillance',
+        'apex': 'Defense Apex Multi-Domain Command',
+        'multihazard': 'Multi-Hazard Intelligence Hub',
+        'sar': 'Copernicus Sentinel-1 SAR Radar Intelligence',
+        'india': 'India Strategic & NDRF Deployment Monitor',
+        'alerts': 'Tactical Alerts & NDMA CAP Broadcasts',
+        'analytics': 'Analytics & Multi-Hazard Trend Models'
+    };
+
+    if (portalKey === 'hq') {
+        if (hqView) hqView.style.display = 'block';
+        if (container) container.style.display = 'none';
+        if (frame) {
+            frame.src = 'about:blank';
+            frame.removeAttribute('data-loaded-url');
+        }
+        if (popout) popout.href = '/';
+        history.replaceState(null, '', '/');
+        if (typeof map2d !== 'undefined' && map2d.invalidateSize) {
+            setTimeout(function() { map2d.invalidateSize(); }, 200);
+        }
+    } else {
+        if (hqView) hqView.style.display = 'none';
+        if (container) container.style.display = 'block';
+        if (indicator) indicator.textContent = 'ACTIVE: ' + (titles[portalKey] || portalKey.toUpperCase());
+        if (popout) popout.href = url;
+        history.replaceState(null, '', '/?portal=' + portalKey);
+
+        if (frame && frame.getAttribute('data-loaded-url') !== url) {
+            if (loading) loading.style.display = 'block';
+            frame.src = url;
+            frame.setAttribute('data-loaded-url', url);
+            frame.onload = function() {
+                if (loading) loading.style.display = 'none';
+            };
+        }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.togglePortalFullscreen = function() {
+    var container = document.getElementById('portal-frame-container');
+    if (!document.fullscreenElement) {
+        if (container && container.style.display !== 'none') {
+            container.requestFullscreen().catch(function() {});
+        } else {
+            document.documentElement.requestFullscreen().catch(function() {});
+        }
+    } else {
+        document.exitFullscreen().catch(function() {});
+    }
+};
+
+window.addEventListener('DOMContentLoaded', function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var p = urlParams.get('portal');
+    var portalRoutes = {
+        'predict': '/predict',
+        'govt': '/govt',
+        'global': '/global',
+        'apex': '/apex',
+        'multihazard': '/multihazard',
+        'sar': '/sar',
+        'india': '/india',
+        'alerts': '/alerts',
+        'analytics': '/trend'
+    };
+    if (p && portalRoutes[p]) {
+        window.openUnifiedPortal(p, portalRoutes[p]);
+    }
+});
+</script>
+
+
+<script>
+// ==========================================
+// 11. 4 ANALYTIC GRAPHS (CHART.JS)
+// ==========================================
+new Chart(document.getElementById('sarCanvas'),{
+    type:'line',
+    data:{
+        labels:['-30km','-20km','-10km','Center','+10km','+20km','+30km'],
+        datasets:[
+            {label:'VV dB',data:[-22,-18,-15,-22,-14,-16,-19],borderColor:'#ff7b00',backgroundColor:'rgba(255,123,0,0.1)',fill:true,tension:0.4},
+            {label:'VH dB',data:[-28,-25,-22,-28,-21,-23,-26],borderColor:'#00bfff',backgroundColor:'rgba(0,191,255,0.1)',fill:true,tension:0.4}
+        ]
+    },
+    options:{responsive:true, plugins:{legend:{labels:{color:'#aaa',font:{size:9}}}}}
+});
+
+new Chart(document.getElementById('floodCanvas'),{
+    type:'bar',
+    data:{labels:['Water','Flood','Land','Urban'],datasets:[{data:[42,14,28,16],backgroundColor:['#00bfff','#ff7b00','#00e676','#ffd700']}]},
+    options:{responsive:true, plugins:{legend:{display:false}}}
+});
+
+new Chart(document.getElementById('threatCanvas'),{
+    type:'line',
+    data:{labels:['Day1','Day2','Day3','Day4','Day5','Day6','Day7'],datasets:[{data:[32,45,38,60,55,70,68],borderColor:'#00e676',backgroundColor:'rgba(0,230,118,0.15)',fill:true,tension:0.4}]},
+    options:{responsive:true, plugins:{legend:{display:false}}}
+});
+
+new Chart(document.getElementById('polCanvas'),{
+    type:'doughnut',
+    data:{labels:['VV Co-Pol','VH Cross-Pol'],datasets:[{data:[62,38],backgroundColor:['#ff7b00','#00bfff'],borderWidth:0}]},
+    options:{responsive:true, plugins:{legend:{labels:{color:'#aaa',font:{size:9}}}}}
+});
+
+// ==========================================
+// 12. TACTICAL AUDIO SIREN CONTROLLER
+// ==========================================
+const sirenAudio = document.getElementById('sirenAudio');
+const btnSirenToggle = document.getElementById('btn-siren-toggle');
+const btnSirenTest = document.getElementById('btn-siren-test');
+const sirenIcon = document.getElementById('siren-icon');
+const sirenStatusText = document.getElementById('siren-status-text');
+const criticalBanner = document.getElementById('criticalBanner');
+
+let isSirenArmed = localStorage.getItem('praharix_siren_armed') === 'true';
+let isSirenPlaying = false;
+const criticalThreatCount = {{ stats.critical }};
+
+function updateSirenUI() {
+    if (isSirenPlaying) {
+        btnSirenToggle.className = 'toggle-btn btn-siren-active';
+        sirenIcon.textContent = '🚨';
+        sirenStatusText.textContent = 'SIREN ACTIVE';
+        btnSirenTest.textContent = '⏹ STOP SIREN';
+        btnSirenTest.style.borderColor = '#ff1744';
+        btnSirenTest.style.color = '#ff1744';
+        criticalBanner.style.display = 'flex';
+    } else if (isSirenArmed) {
+        btnSirenToggle.className = 'toggle-btn btn-siren-armed';
+        sirenIcon.textContent = '🔊';
+        sirenStatusText.textContent = 'SIREN ARMED';
+        btnSirenTest.textContent = '🚨 TEST AUDIO';
+        btnSirenTest.style.borderColor = '#ff7b00';
+        btnSirenTest.style.color = '#ff7b00';
+        criticalBanner.style.display = 'none';
+    } else {
+        btnSirenToggle.className = 'toggle-btn';
+        sirenIcon.textContent = '🔇';
+        sirenStatusText.textContent = 'SIREN MUTED';
+        btnSirenTest.textContent = '🚨 TEST AUDIO';
+        btnSirenTest.style.borderColor = '#ff7b00';
+        btnSirenTest.style.color = '#ff7b00';
+        criticalBanner.style.display = 'none';
+    }
+}
+
+function playSirenAudio() {
+    sirenAudio.play().then(() => {
+        isSirenPlaying = true;
+        updateSirenUI();
+    }).catch(err => {
+        console.warn("Audio autoplay policy:", err);
+    });
+}
+
+function stopSirenAudio() {
+    sirenAudio.pause();
+    sirenAudio.currentTime = 0;
+    isSirenPlaying = false;
+    updateSirenUI();
+}
+
+function toggleSirenArmed() {
+    isSirenArmed = !isSirenArmed;
+    localStorage.setItem('praharix_siren_armed', isSirenArmed);
+    if (isSirenArmed) {
+        if (criticalThreatCount > 0) {
+            playSirenAudio();
+        } else {
+            sirenAudio.play().then(() => {
+                sirenAudio.pause();
+                sirenAudio.currentTime = 0;
+            }).catch(() => {});
+            updateSirenUI();
+        }
+    } else {
+        stopSirenAudio();
+    }
+}
+
+function toggleManualSirenTest() {
+    if (isSirenPlaying) stopSirenAudio(); else playSirenAudio();
+}
+
+// Initialize on page load
+updateSirenUI();
+if (currentLang !== 'en') applyLanguage(currentLang);
+</script>
+</body>
+</html>

@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>PRAHARIX 2.0 - APEX Strategic Tactical Command & Space-Edge Nervous System</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif;}
+body{background:#040714;color:#f1f5f9;min-height:100vh;padding-bottom:50px;overflow-x:hidden;}
+.header{background:linear-gradient(180deg,#0a1226 0%,#050814 100%);padding:28px 24px;border-bottom:2px solid #00bfff;box-shadow:0 4px 30px rgba(0,191,255,0.25);position:relative;}
+.header-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:1px;background:rgba(0,191,255,0.15);border:1px solid #00bfff;color:#00bfff;margin-bottom:8px;}
+.header h1{font-size:36px;font-weight:900;letter-spacing:1px;background:linear-gradient(90deg,#00bfff,#00e676,#ffd700,#ff1744);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.header p{color:#94a3b8;font-size:13px;margin-top:6px;}
+
+.container{max-width:1400px;margin:0 auto;padding:22px;}
+.card{background:rgba(12,20,38,0.85);backdrop-filter:blur(16px);border:1px solid rgba(0,191,255,0.22);border-radius:18px;padding:24px;margin-bottom:24px;box-shadow:0 10px 30px rgba(0,0,0,0.45);position:relative;overflow:hidden;}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00bfff,transparent);}
+
+.btn{padding:8px 18px;border-radius:24px;border:1px solid #00bfff;background:rgba(0,191,255,0.12);color:#00bfff;font-weight:700;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:all 0.2s;}
+.btn:hover{background:rgba(0,191,255,0.3);box-shadow:0 0 16px rgba(0,191,255,0.4);transform:translateY(-1px);}
+.btn-red{border-color:#ff1744;color:#ff1744;background:rgba(255,23,68,0.12);}
+.btn-red:hover{background:rgba(255,23,68,0.3);box-shadow:0 0 16px rgba(255,23,68,0.4);}
+.btn-green{border-color:#00e676;color:#00e676;background:rgba(0,230,118,0.12);}
+.btn-green:hover{background:rgba(0,230,118,0.3);box-shadow:0 0 16px rgba(0,230,118,0.4);}
+.btn-gold{border-color:#ffd700;color:#ffd700;background:rgba(255,215,0,0.12);}
+.btn-gold:hover{background:rgba(255,215,0,0.3);box-shadow:0 0 16px rgba(255,215,0,0.4);}
+
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:20px;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;}
+
+.kpi-box{background:rgba(5,11,24,0.65);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;text-align:center;}
+.kpi-title{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+.kpi-val{font-size:28px;font-weight:900;margin:6px 0;}
+
+/* DPM GRID */
+.dpm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:16px 0;}
+.dpm-cell{padding:10px 4px;border-radius:8px;text-align:center;font-size:10px;cursor:pointer;transition:transform 0.15s;border:1px solid rgba(255,255,255,0.15);}
+.dpm-cell:hover{transform:scale(1.08);z-index:10;box-shadow:0 0 14px rgba(255,255,255,0.4);}
+
+/* TIMELINE DOMINO */
+.timeline-track{display:flex;flex-direction:column;gap:12px;margin-top:16px;position:relative;}
+.timeline-step{display:flex;gap:14px;background:rgba(5,11,24,0.55);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;align-items:flex-start;position:relative;}
+.timeline-step.active{border-color:#ff1744;box-shadow:0 0 15px rgba(255,23,68,0.25);}
+.timeline-icon{font-size:22px;padding:8px;background:rgba(255,255,255,0.06);border-radius:10px;}
+
+/* DRONE HUD */
+.drone-hud{position:relative;background:#030712;border:2px solid #00e676;border-radius:14px;height:380px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,230,118,0.2);}
+.drone-grid-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(0,230,118,0.08) 1px, transparent 1px),linear-gradient(90deg, rgba(0,230,118,0.08) 1px, transparent 1px);background-size:40px 40px;pointer-events:none;}
+.drone-target{position:absolute;border:2px solid #ff1744;background:rgba(255,23,68,0.18);border-radius:6px;animation:pulseTarget 1.5s infinite;cursor:pointer;padding:4px;font-size:10px;color:#fff;font-weight:700;}
+@keyframes pulseTarget{0%,100%{box-shadow:0 0 0 rgba(255,23,68,0.6);}50%{box-shadow:0 0 14px rgba(255,23,68,0.9);}}
+
+/* ACOUSTIC WAVE */
+.audio-wave{display:flex;align-items:flex-end;gap:4px;height:48px;padding:8px;background:rgba(0,0,0,0.5);border-radius:10px;}
+.wave-bar{width:6px;background:#00bfff;border-radius:3px;animation:waveBeat 1.2s infinite ease-in-out;}
+@keyframes waveBeat{0%,100%{height:15%;background:#00bfff;}50%{height:95%;background:#ff1744;}}
+
+#reroute-map{height:340px;width:100%;border-radius:12px;border:1px solid rgba(0,191,255,0.3);}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+            <span class="header-badge">⚡ DEFENSE & SPACE GRADE TACTICAL SYSTEM</span>
+            <h1>🇮🇳 PRAHARIX 2.0 • APEX COMMAND</h1>
+            <p>ISRO NISAR / NavIC • InSAR Damage Proxy Maps • Multi-Hazard Domino Cascade • Dynamic NetworkX Convoy Reroute • Drone-AI USAR</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="/" class="btn">🏠 Dashboard</a>
+            <a href="/india" class="btn btn-gold">🗺️ Strategic India</a>
+            <a href="/sar" class="btn btn-green">🛰️ SAR Radar</a>
+            <a href="/alerts" class="btn btn-red">🚨 Alerts</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- KPI STRIP -->
+    <div class="grid-4" style="margin-bottom:24px;">
+        <div class="kpi-box" style="border-top:3px solid #00bfff;">
+            <div class="kpi-title">🛰️ Satellite Radar Source</div>
+            <div class="kpi-val" style="color:#00bfff;font-size:22px;">ISRO NISAR + S1</div>
+            <small style="color:#94a3b8;">L-Band (24cm) + C-Band (5.6cm)</small>
+        </div>
+        <div class="kpi-box" style="border-top:3px solid #ff1744;">
+            <div class="kpi-title">⚡ Multi-Hazard Cascade</div>
+            <div class="kpi-val" style="color:#ff1744;font-size:22px;">5 Active Phases</div>
+            <small style="color:#94a3b8;">M6.8 Rupture &rarr; Outburst Breach</small>
+        </div>
+        <div class="kpi-box" style="border-top:3px solid #ffd700;">
+            <div class="kpi-title">🚗 Dynamic Reroute Engine</div>
+            <div class="kpi-val" style="color:#ffd700;font-size:22px;">NetworkX Active</div>
+            <small style="color:#94a3b8;">Bridge Failure Bypass Armed</small>
+        </div>
+        <div class="kpi-box" style="border-top:3px solid #00e676;">
+            <div class="kpi-title">🚁 Edge UAV Swarm AI</div>
+            <div class="kpi-val" style="color:#00e676;font-size:22px;">4 Drones Patrolling</div>
+            <small style="color:#94a3b8;">YOLOv8 + Rubble Acoustic Probe</small>
+        </div>
+    </div>
+
+    <!-- ROW 1: InSAR DAMAGE PROXY MAPPING & ISRO NAVIC DOWNLINK -->
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <div>
+                <h2 style="font-size:20px;color:#00bfff;">🛰️ APEX 1: InSAR Damage Proxy Map (DPM) & ISRO NavIC S-Band Downlink</h2>
+                <p style="font-size:12px;color:#94a3b8;">Interferometric Coherence Loss (&gamma;) & Line-of-Sight (LOS) Surface Subsidence Analysis</p>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button onclick="regenerateInSAR(6.8)" class="btn">M6.8 Kangra</button>
+                <button onclick="regenerateInSAR(7.4)" class="btn btn-red">M7.4 Megathrust</button>
+                <button onclick="regenerateInSAR(6.2)" class="btn btn-green">M6.2 Moderate</button>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+                    <b style="color:#cbd5e1;">Spatial 7x7 Coherence Degradation Matrix (35km Radius):</b>
+                    <span id="dpm-critical-count" style="color:#ff1744;font-weight:700;">Critical Destruction Cells: Calculating...</span>
+                </div>
+                <div id="dpm-grid-container" class="dpm-grid">
+                    <!-- Populated by JS -->
+                </div>
+                <div style="display:flex;justify-content:space-around;font-size:11px;color:#94a3b8;margin-top:6px;">
+                    <span><span style="color:#ff1744;">■</span> D4-D5 Pancake</span>
+                    <span><span style="color:#ff9100;">■</span> D2-D3 Wall Shear</span>
+                    <span><span style="color:#ffd600;">■</span> D1 Superficial</span>
+                    <span><span style="color:#00e676;">■</span> D0 Intact</span>
+                </div>
+            </div>
+
+            <div style="background:rgba(5,11,24,0.7);border:1px solid rgba(0,191,255,0.25);border-radius:14px;padding:18px;">
+                <h3 style="font-size:15px;color:#ffd700;margin-bottom:10px;">📡 ISRO NavIC S-Band Emergency Messaging Downlink</h3>
+                <p style="font-size:12px;color:#cbd5e1;margin-bottom:12px;">Direct satellite-to-handset broadcast bypassing damaged cellular towers.</p>
+                <div style="background:#020617;border-left:4px solid #ffd700;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;color:#38bdf8;margin-bottom:10px;" id="navic-packet-box">
+                    Loading NavIC S-Band Satellite Packet...
+                </div>
+                <div style="font-size:12px;color:#e2e8f0;margin-top:10px;">
+                    <b style="color:#00e676;">English Broadcast:</b>
+                    <p id="navic-text-en" style="color:#cbd5e1;margin:4px 0 10px 0;">--</p>
+                    <b style="color:#00e676;">हिंदी प्रसारण (Hindi Broadcast):</b>
+                    <p id="navic-text-hi" style="color:#cbd5e1;margin:4px 0 0 0;">--</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2: MULTI-HAZARD DOMINO CASCADE FAILURE ENGINE -->
+    <div class="card" style="border-color:#ff1744;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <div>
+                <h2 style="font-size:20px;color:#ff1744;">⚡ APEX 2: Multi-Hazard "Domino Cascade" Physics Failure Engine</h2>
+                <p style="font-size:12px;color:#94a3b8;">Predicting Chain-Reaction: Seismic Rupture &rarr; Rockslide Dam &rarr; GLOF Overtopping Breach &rarr; Grid Islanding</p>
+            </div>
+            <div>
+                <button onclick="triggerCascadeSimulation()" class="btn btn-red" style="font-size:13px;padding:10px 22px;">
+                    💥 Run Domino Simulation
+                </button>
+            </div>
+        </div>
+
+        <div class="grid-3" style="margin-bottom:18px;">
+            <div class="kpi-box">
+                <div class="kpi-title">Peak Ground Accel (PGA)</div>
+                <div id="cascade-pga" class="kpi-val" style="color:#ff1744;">0.428g</div>
+                <small style="color:#94a3b8;">Joyner-Boore Attenuation</small>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-title">Debris Volume (Keefer/Marc)</div>
+                <div id="cascade-debris" class="kpi-val" style="color:#ff9100;">4.85 Million m³</div>
+                <small style="color:#94a3b8;">River Blockage Canyon Choke</small>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-title">Breach Outburst Discharge</div>
+                <div id="cascade-discharge" class="kpi-val" style="color:#00bfff;">14,250 m³/s</div>
+                <small style="color:#94a3b8;">Costa-Schuster Hydro Wave</small>
+            </div>
+        </div>
+
+        <div class="timeline-track" id="cascade-timeline-container">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- ROW 3: DYNAMIC NETWORKX CONVOY REROUTING & DRONE-AI USAR -->
+    <div class="grid-2">
+        <!-- NETWORKX REROUTING -->
+        <div class="card" style="border-color:#ffd700;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div>
+                    <h2 style="font-size:18px;color:#ffd700;">🚗 APEX 3: Dynamic Convoy Rerouting</h2>
+                    <p style="font-size:12px;color:#94a3b8;">NetworkX Graph with Bridge & Tunnel Severing</p>
+                </div>
+                <button onclick="recalculateRouting()" class="btn btn-gold">Re-route Convoy</button>
+            </div>
+
+            <div style="background:rgba(5,11,24,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;margin-bottom:14px;font-size:12px;">
+                <b style="color:#cbd5e1;">Simulate Active Road/Bridge Obstacles:</b>
+                <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
+                    <label style="cursor:pointer;color:#ff1744;">
+                        <input type="checkbox" id="chk-mandi" checked> Mandi Beas River Bridge Collapsed
+                    </label>
+                    <label style="cursor:pointer;color:#ff9100;">
+                        <input type="checkbox" id="chk-bilaspur" checked> Bilaspur Pass Submerged
+                    </label>
+                </div>
+            </div>
+
+            <div id="reroute-map"></div>
+
+            <div style="margin-top:14px;font-size:12px;background:#020617;padding:14px;border-radius:10px;border-left:4px solid #ffd700;">
+                <b style="color:#ffd700;">TACTICAL CONVOY DIRECTIVE:</b>
+                <p id="routing-directive" style="color:#cbd5e1;margin-top:4px;">Calculating optimal bypass corridors...</p>
+                <div style="display:flex;justify-content:space-between;margin-top:10px;color:#94a3b8;font-size:11px;">
+                    <span id="route-ground-eta">Ground Bypass ETA: --</span>
+                    <span id="route-air-eta" style="color:#00e676;">IAF Airlift ETA: --</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DRONE-AI USAR & ACOUSTIC RUBBLE PROBE -->
+        <div class="card" style="border-color:#00e676;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div>
+                    <h2 style="font-size:18px;color:#00e676;">🚁 APEX 4: Edge UAV Swarm & Acoustic USAR</h2>
+                    <p style="font-size:12px;color:#94a3b8;">YOLOv8 Detection Geometry + Rubble Geophone Probe</p>
+                </div>
+                <span class="header-badge" style="border-color:#00e676;color:#00e676;margin:0;">RTSP 1080p HUD</span>
+            </div>
+
+            <!-- DRONE HUD -->
+            <div class="drone-hud" id="drone-hud-viewport">
+                <div class="drone-grid-overlay"></div>
+                <!-- HUD Overlays -->
+                <div style="position:absolute;top:12px;left:14px;font-size:11px;color:#00e676;font-family:monospace;">
+                    ALT: 45.0m | SATS: 14 (NavIC/GPS) | BATT: 78% | FLIR THERMAL ACTIVE
+                </div>
+                <div style="position:absolute;top:12px;right:14px;font-size:11px;color:#ff1744;font-family:monospace;animation:pulseTarget 1s infinite;">
+                    ● REC (LIVE INFERENCE)
+                </div>
+
+                <!-- Bounding boxes injected via JS -->
+                <div id="drone-targets-layer"></div>
+            </div>
+
+            <!-- ACOUSTIC PROBE -->
+            <div style="margin-top:14px;background:rgba(5,11,24,0.7);border:1px solid rgba(0,230,118,0.3);border-radius:12px;padding:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <b style="font-size:13px;color:#00e676;">🎙️ Piezo-Electric Rubble Geophone Classifier:</b>
+                    <span style="font-size:11px;color:#ff1744;font-weight:700;">PROBABILITY: 93% HUMAN TAPPING</span>
+                </div>
+                <div class="audio-wave">
+                    <div class="wave-bar" style="height:30%;animation-delay:0.1s"></div>
+                    <div class="wave-bar" style="height:80%;animation-delay:0.3s"></div>
+                    <div class="wave-bar" style="height:95%;animation-delay:0.2s"></div>
+                    <div class="wave-bar" style="height:40%;animation-delay:0.4s"></div>
+                    <div class="wave-bar" style="height:90%;animation-delay:0.15s"></div>
+                    <div class="wave-bar" style="height:60%;animation-delay:0.25s"></div>
+                    <div class="wave-bar" style="height:100%;animation-delay:0.35s"></div>
+                    <div class="wave-bar" style="height:50%;animation-delay:0.1s"></div>
+                    <div class="wave-bar" style="height:85%;animation-delay:0.28s"></div>
+                    <div class="wave-bar" style="height:35%;animation-delay:0.12s"></div>
+                </div>
+                <p style="font-size:11px;color:#cbd5e1;margin-top:8px;">
+                    Cadence: <b>3 Taps / 5 Seconds (SOS)</b> | Rubble Depth Triangulated: <b>2.4 meters</b> | Ambient machinery filtered.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 4: AUTONOMOUS NDMA TACTICAL AI INCIDENT COMMANDER (ICS-201/204) -->
+    <div class="card" style="border-color:#38bdf8;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+            <div>
+                <h2 style="font-size:20px;color:#38bdf8;">🤖 APEX 5: Autonomous NDMA Tactical AI Incident Commander</h2>
+                <p style="font-size:12px;color:#94a3b8;">Formulates Official ICS-201 Incident Action Plan (IAP) & Surgical Logistics Matrix</p>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button onclick="playTacticalAudio()" class="btn btn-gold" id="btn-audio-speak">
+                    📢 Play Vernacular Voice Siren
+                </button>
+                <button onclick="generateNewIAP()" class="btn">
+                    🔄 Re-synthesize IAP
+                </button>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <h3 style="font-size:14px;color:#38bdf8;margin-bottom:8px;">📋 Command Objectives (Operational Period 00:00 - 12:00):</h3>
+                <ul id="iap-objectives-list" style="padding-left:18px;font-size:13px;color:#cbd5e1;line-height:1.7;">
+                    <!-- Populated by JS -->
+                </ul>
+
+                <h3 style="font-size:14px;color:#ffd700;margin:14px 0 8px 0;">🎖️ Branch Operational Assignments:</h3>
+                <div id="iap-assignments-container" style="display:flex;flex-direction:column;gap:8px;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div style="background:rgba(5,11,24,0.7);border:1px solid rgba(56,189,248,0.25);border-radius:14px;padding:18px;">
+                <h3 style="font-size:14px;color:#00e676;margin-bottom:12px;">📦 Surgical Disaster Supply Logistics Matrix:</h3>
+                <div class="grid-2" id="iap-logistics-matrix" style="gap:10px;">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div style="margin-top:18px;padding:12px;background:#020617;border-radius:10px;border-left:4px solid #38bdf8;">
+                    <b style="font-size:12px;color:#38bdf8;">TACTICAL BILINGUAL AUDIO BROADCAST TEXT:</b>
+                    <p id="iap-speech-text" style="font-size:12px;color:#e2e8f0;margin-top:4px;font-style:italic;">
+                        Loading broadcast speech...
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ==========================================
+// 1. InSAR DPM RENDERING
+// ==========================================
+let currentInSARData = null;
+
+async function regenerateInSAR(mag = 6.8) {
+    try {
+        const res = await fetch(`/api/apex/insar?mag=${mag}`);
+        const data = await res.json();
+        currentInSARData = data;
+        renderInSAR(data);
+    } catch(e) {
+        console.error("InSAR error:", e);
+    }
+}
+
+function renderInSAR(data) {
+    const gridEl = document.getElementById("dpm-grid-container");
+    gridEl.innerHTML = "";
+    document.getElementById("dpm-critical-count").innerText = `Critical Destruction Cells: ${data.critical_cells_count} / 49`;
+
+    data.cells.forEach(cell => {
+        const d = document.createElement("div");
+        d.className = "dpm-cell";
+        d.style.background = cell.color + "33";
+        d.style.borderColor = cell.color;
+        d.innerHTML = `
+            <b style="color:${cell.color};font-size:9px;">${cell.cell_id}</b><br>
+            <span style="font-size:11px;font-weight:800;color:#fff;">${cell.coherence_loss}</span><br>
+            <span style="color:#aaa;font-size:8px;">${cell.los_displacement_mm}mm</span>
+        `;
+        d.title = `${cell.damage_grade}\nLOS: ${cell.los_displacement_mm}mm\nDist: ${cell.distance_km}km`;
+        gridEl.appendChild(d);
+    });
+
+    // NavIC Packet
+    const navic = data.navic_satellite_downlink;
+    document.getElementById("navic-packet-box").innerText = 
+        `TRANSPONDER: ${navic.transponder}\nFREQ: ${navic.downlink_freq}\nPAYLOAD_HEX: ${navic.payload_hex}\nEIRP: ${navic.eirp_dbw} dBW`;
+    document.getElementById("navic-text-en").innerText = navic.broadcast_text_en;
+    document.getElementById("navic-text-hi").innerText = navic.broadcast_text_hi;
+}
+
+// ==========================================
+// 2. MULTI-HAZARD DOMINO CASCADE
+// ==========================================
+async function triggerCascadeSimulation() {
+    try {
+        const res = await fetch("/api/apex/cascade?mag=7.2");
+        const data = await res.json();
+        renderCascade(data);
+    } catch(e) {
+        console.error("Cascade error:", e);
+    }
+}
+
+function renderCascade(data) {
+    document.getElementById("cascade-pga").innerText = `${data.pga_peak_g}g`;
+    document.getElementById("cascade-debris").innerText = data.debris_volume_m3;
+    document.getElementById("cascade-discharge").innerText = data.peak_flood_discharge_m3s;
+
+    const cont = document.getElementById("cascade-timeline-container");
+    cont.innerHTML = "";
+
+    data.timeline.forEach((step, idx) => {
+        const item = document.createElement("div");
+        item.className = `timeline-step ${idx === 0 ? 'active' : ''}`;
+        item.innerHTML = `
+            <div class="timeline-icon">${step.icon}</div>
+            <div style="flex:1;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+                    <b style="color:#fff;font-size:14px;">${step.phase}: ${step.title}</b>
+                    <span style="font-size:11px;font-weight:700;color:${step.severity==='CRITICAL'||step.severity==='EXTREME'?'#ff1744':'#ff9100'};">${step.severity}</span>
+                </div>
+                <p style="font-size:12px;color:#cbd5e1;margin:4px 0;">${step.description}</p>
+                <div style="font-size:11px;color:#38bdf8;font-family:monospace;">${step.metrics} &bull; [${step.status}]</div>
+            </div>
+        `;
+        cont.appendChild(item);
+    });
+}
+
+// ==========================================
+// 3. NETWORKX CONVOY REROUTING & MAP
+// ==========================================
+let rerouteMap = null;
+let routeLine = null;
+let markersLayer = null;
+
+function initRerouteMap() {
+    rerouteMap = L.map('reroute-map').setView([30.6, 76.8], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB'
+    }).addTo(rerouteMap);
+    markersLayer = L.layerGroup().addTo(rerouteMap);
+}
+
+async function recalculateRouting() {
+    const chkMandi = document.getElementById("chk-mandi").checked;
+    const chkBilaspur = document.getElementById("chk-bilaspur").checked;
+
+    let bridges = [];
+    let floods = [];
+    if (chkMandi) bridges.push("MANDI_BRIDGE");
+    if (chkBilaspur) floods.push("BILASPUR_NH205");
+
+    try {
+        const res = await fetch("/api/apex/reroute", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({collapsed_bridges: bridges, flooded_corridors: floods})
+        });
+        const data = await res.json();
+        renderRouting(data);
+    } catch(e) {
+        console.error("Routing error:", e);
+    }
+}
+
+function renderRouting(data) {
+    document.getElementById("routing-directive").innerText = data.tactical_recommendation;
+    document.getElementById("route-ground-eta").innerText = `Ground Bypass ETA: ${data.failover_hours} hrs (${data.failover_distance_km} km)`;
+    document.getElementById("route-air-eta").innerText = `IAF C-130J Airlift ETA: ${data.air_insertion_hours} hrs`;
+
+    if (!rerouteMap) initRerouteMap();
+    markersLayer.clearLayers();
+    if (routeLine) rerouteMap.removeLayer(routeLine);
+
+    const latlngs = [];
+    data.active_corridor_nodes.forEach(node => {
+        if (node.lat && node.lon) {
+            latlngs.push([node.lat, node.lon]);
+            const marker = L.circleMarker([node.lat, node.lon], {
+                radius: 6,
+                color: node.type==='GROUND_ZERO'?'#ff1744':(node.type==='BASE'?'#00e676':'#ffd700'),
+                fillColor: node.type==='GROUND_ZERO'?'#ff1744':'#00bfff',
+                fillOpacity: 0.9
+            }).bindPopup(`<b>${node.name}</b><br>Type: ${node.type}`);
+            markersLayer.addLayer(marker);
+        }
+    });
+
+    if (latlngs.length > 1) {
+        routeLine = L.polyline(latlngs, {color: '#00bfff', weight: 4, dashArray: '6, 6'}).addTo(rerouteMap);
+        rerouteMap.fitBounds(routeLine.getBounds(), {padding: [20, 20]});
+    }
+}
+
+// ==========================================
+// 4. DRONE-AI HUD DETECTIONS
+// ==========================================
+async function fetchDroneHUD() {
+    try {
+        const res = await fetch("/api/apex/drone_telemetry");
+        const data = await res.json();
+        renderDroneHUD(data);
+    } catch(e) {
+        console.error("Drone HUD error:", e);
+    }
+}
+
+function renderDroneHUD(data) {
+    const layer = document.getElementById("drone-targets-layer");
+    layer.innerHTML = "";
+
+    data.detections.forEach(det => {
+        const el = document.createElement("div");
+        el.className = "drone-target";
+        el.style.left = (det.bbox[0] / 6.5) + "px";
+        el.style.top = (det.bbox[1] / 6.0 + 40) + "px";
+        el.style.width = (det.bbox[2] / 2.0) + "px";
+        el.style.height = (det.bbox[3] / 2.0) + "px";
+        el.innerHTML = `
+            <span>${det.icon} ${det.class}</span><br>
+            <small style="color:#00e676;">${Math.round(det.confidence*100)}% | ${det.thermal_signature_c}°C</small>
+        `;
+        layer.appendChild(el);
+    });
+}
+
+// ==========================================
+// 5. AUTONOMOUS NDMA IAP & VOICE AUDIO
+// ==========================================
+let currentSpeechText = "";
+
+async function generateNewIAP() {
+    try {
+        const res = await fetch("/api/apex/iap");
+        const data = await res.json();
+        renderIAP(data);
+    } catch(e) {
+        console.error("IAP error:", e);
+    }
+}
+
+function renderIAP(data) {
+    const objList = document.getElementById("iap-objectives-list");
+    objList.innerHTML = "";
+    data.command_objectives.forEach(obj => {
+        const li = document.createElement("li");
+        li.innerText = obj;
+        objList.appendChild(li);
+    });
+
+    const assignCont = document.getElementById("iap-assignments-container");
+    assignCont.innerHTML = "";
+    data.branch_assignments.forEach(as => {
+        const div = document.createElement("div");
+        div.style.background = "rgba(0,0,0,0.3)";
+        div.style.padding = "8px 12px";
+        div.style.borderRadius = "8px";
+        div.style.fontSize = "12px";
+        div.innerHTML = `
+            <b style="color:#38bdf8;">${as.branch}</b> (${as.commander}):<br>
+            <span style="color:#cbd5e1;">${as.task}</span> &bull; <span style="color:#00e676;">[${as.status}]</span>
+        `;
+        assignCont.appendChild(div);
+    });
+
+    const logCont = document.getElementById("iap-logistics-matrix");
+    logCont.innerHTML = "";
+    for (const [key, val] of Object.entries(data.logistics_supply_matrix)) {
+        const item = document.createElement("div");
+        item.style.background = "rgba(0,0,0,0.4)";
+        item.style.padding = "8px";
+        item.style.borderRadius = "8px";
+        item.style.fontSize = "11px";
+        item.innerHTML = `
+            <span style="color:#94a3b8;text-transform:capitalize;">${key.replace(/_/g, ' ')}:</span><br>
+            <b style="color:#fff;font-size:13px;">${val}</b>
+        `;
+        logCont.appendChild(item);
+    }
+
+    currentSpeechText = data.voice_announcement_hi;
+    document.getElementById("iap-speech-text").innerText = data.voice_announcement_hi;
+}
+
+function playTacticalAudio() {
+    if (!('speechSynthesis' in window)) {
+        alert("Speech synthesis not supported in this browser.");
+        return;
+    }
+    const utter = new SpeechSynthesisUtterance(currentSpeechText);
+    utter.lang = 'hi-IN';
+    utter.rate = 0.95;
+    utter.pitch = 1.0;
+    window.speechSynthesis.speak(utter);
+}
+
+// Initial Boot
+document.addEventListener("DOMContentLoaded", () => {
+    regenerateInSAR(6.8);
+    triggerCascadeSimulation();
+    initRerouteMap();
+    recalculateRouting();
+    fetchDroneHUD();
+    generateNewIAP();
+});
+</script>
+
+</body>
+</html>

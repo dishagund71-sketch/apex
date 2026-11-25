@@ -1,0 +1,121 @@
+# ==============================================================================
+# PRAHARIX 2.0 APEX EDITION — CORE REQUIREMENTS
+# Production-grade National Disaster Command Platform
+# ==============================================================================
+# Install with: pip install -r requirements.txt
+# Note: torch/ultralytics/streamlit are OPTIONAL (not imported in app.py)
+#       Use requirements-full.txt if you want those heavy ML packages.
+# ==============================================================================
+
+# ── Web Framework ──────────────────────────────────────────────────────────────
+Flask==3.1.3
+Werkzeug==3.1.8
+gunicorn==26.2.0            # Linux/Mac production server
+# waitress                  # Uncomment for Windows production server
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+blinker==1.9.0
+click==8.5.0
+
+# ── Environment & Config ───────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+
+# ── HTTP & Networking ──────────────────────────────────────────────────────────
+requests==2.34.2
+urllib3==2.7.0
+certifi==2026.7.22
+charset-normalizer==3.4.9
+idna==3.18
+
+# ── Geospatial & Mapping ───────────────────────────────────────────────────────
+geopandas==1.1.4
+folium==0.20.0
+shapely==2.1.2
+pyproj==3.7.2
+pyogrio==0.13.0
+rasterio==1.4.4
+affine==3.0.1
+branca==0.8.2
+xyzservices==2026.3.0
+utm==0.9.0
+
+# ── Data Science ───────────────────────────────────────────────────────────────
+numpy==2.4.6
+pandas==3.0.5
+scipy==1.17.1
+scikit-learn==1.9.0
+joblib==1.6.0
+threadpoolctl==3.6.0
+
+# ── Visualization ──────────────────────────────────────────────────────────────
+matplotlib==3.11.1
+contourpy==1.3.3
+cycler==0.12.1
+fonttools==4.63.0
+kiwisolver==1.5.0
+pillow==12.3.0
+pyparsing==3.3.2
+
+# ── Satellite & Remote Sensing ─────────────────────────────────────────────────
+sentinelhub==3.11.5
+opencv-python==5.0.0.93
+tifffile==2026.3.3
+
+# ── Graph / Network Algorithms ─────────────────────────────────────────────────
+networkx==3.6.1
+
+# ── Reports / PDF Generation ───────────────────────────────────────────────────
+reportlab==5.0.1
+openpyxl==3.1.5
+
+# ── System / Utilities ─────────────────────────────────────────────────────────
+psutil==7.2.2
+python-dateutil==2.9.0.post0
+pyarrow==25.0.1
+six==1.17.0
+filelock==3.32.2
+packaging==26.2
+PyYAML==6.0.3
+toml==0.10.2
+tomli==2.4.1
+tomli_w==1.2.0
+tqdm==4.70.0
+tzdata==2026.3
+colorama==0.4.6
+
+# ── Async / API Support ────────────────────────────────────────────────────────
+anyio==4.14.2
+h11==0.16.0
+httptools==0.8.0
+starlette==1.6.0
+uvicorn==0.52.4
+websockets==16.1.1
+python-multipart==0.0.32
+
+# ── JSON / Schema ──────────────────────────────────────────────────────────────
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+referencing==0.37.0
+rpds-py==2026.6.3
+
+# ── Scientific ─────────────────────────────────────────────────────────────────
+sympy==1.14.0
+mpmath==1.3.0
+
+# ── Misc ───────────────────────────────────────────────────────────────────────
+polars==1.43.1
+narwhals==2.25.0
+cloudpickle==3.1.2
+oauthlib==3.3.1
+requests-oauthlib==2.0.0
+pyttsx3==2.99
+protobuf==7.36.1
+fsspec==2026.7.0
+
+# PRAHARIX 3.0 — Additional Dependencies
+pytest>=8.0.0
+pytest-cov>=5.0.0
+locust>=2.20.0
+mkdocs>=1.5.0
+mkdocs-material>=9.5.0

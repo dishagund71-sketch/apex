@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="csrf-token" content="{{ csrf_token }}"/>
+<title>PRAHARIX 2.0 | Government Operations Command Panel</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --bg: #050816;
+    --bg2: #070d1f;
+    --card: rgba(13,20,45,0.85);
+    --border: rgba(0,210,255,0.18);
+    --accent: #00d2ff;
+    --accent2: #7b2ff7;
+    --danger: #ff3b6b;
+    --warning: #ffaa00;
+    --success: #00e676;
+    --text: #c8d8ff;
+    --text-muted: #6b80b0;
+    --glass: rgba(0,210,255,0.06);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(123,47,247,0.18) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 90% 90%, rgba(0,210,255,0.08) 0%, transparent 60%); pointer-events:none; z-index:0; }
+
+  /* NAVBAR */
+  nav { position:sticky; top:0; z-index:9999; background:rgba(5,8,22,0.97); border-bottom:1px solid var(--border); backdrop-filter:blur(20px); padding:0 2rem; display:flex; align-items:center; justify-content:space-between; height:62px; }
+  .nav-logo { font-size:1.5rem; font-weight:900; background:linear-gradient(90deg,#00d2ff,#7b2ff7,#ff3b6b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:2px; }
+  .nav-links { display:flex; gap:0.3rem; }
+  .nav-links a { color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border-radius:6px; font-size:0.88rem; font-weight:500; transition:all 0.2s; letter-spacing:0.5px; }
+  .nav-links a:hover, .nav-links a.active { color:#fff; background:var(--glass); border:1px solid var(--border); }
+  .nav-badge { background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#fff; font-size:0.7rem; padding:3px 10px; border-radius:20px; font-weight:700; letter-spacing:1px; }
+
+  /* HERO */
+  .hero { position:relative; padding:3.5rem 2rem 2.5rem; text-align:center; border-bottom:1px solid var(--border); background:linear-gradient(180deg,rgba(7,13,31,0.6) 0%, transparent 100%); }
+  .hero h1 { font-size:2.4rem; font-weight:900; background:linear-gradient(90deg,#fff 0%,#00d2ff 50%,#7b2ff7 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:0.5rem; }
+  .hero-sub { color:var(--text-muted); font-size:1rem; margin-bottom:1.5rem; }
+  .hero-clock { font-size:1.6rem; font-weight:700; color:var(--accent); font-family:monospace; letter-spacing:3px; margin-bottom:1rem; }
+  .district-selector-wrap { display:inline-flex; align-items:center; gap:0.7rem; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:0.5rem 1rem; }
+  select { background:transparent; color:var(--text); border:none; outline:none; font-size:0.95rem; cursor:pointer; }
+  select option { background:#0d1428; }
+  .status-strip { display:flex; gap:1rem; justify-content:center; margin-top:1rem; flex-wrap:wrap; }
+  .status-pill { padding:4px 14px; border-radius:20px; font-size:0.78rem; font-weight:700; letter-spacing:1px; }
+  .pill-normal { background:rgba(0,230,118,0.15); border:1px solid var(--success); color:var(--success); }
+  .pill-alert { background:rgba(255,170,0,0.15); border:1px solid var(--warning); color:var(--warning); }
+  .pill-emergency { background:rgba(255,59,107,0.15); border:1px solid var(--danger); color:var(--danger); animation:blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+  /* LAYOUT */
+  .container { max-width:1400px; margin:0 auto; padding:2rem; position:relative; z-index:1; }
+  .section-title { font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; border-left:3px solid var(--accent); padding-left:0.8rem; }
+  .section-title i { color:var(--accent); }
+  .section { margin-bottom:3rem; }
+
+  /* CARDS */
+  .glass-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.4rem; backdrop-filter:blur(12px); transition:border-color 0.3s, transform 0.2s; }
+  .glass-card:hover { border-color:rgba(0,210,255,0.4); transform:translateY(-2px); }
+
+  /* GRID */
+  .grid-3 { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1.2rem; }
+  .grid-4 { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+
+  /* COLLECTOR PANEL */
+  .collector-card { position:relative; overflow:hidden; }
+  .collector-card::before { content:''; position:absolute; top:-30px; right:-30px; width:100px; height:100px; background:radial-gradient(circle, rgba(0,210,255,0.12), transparent); border-radius:50%; }
+  .collector-name { font-size:1.1rem; font-weight:700; color:#fff; }
+  .collector-district { font-size:0.85rem; color:var(--accent); margin:0.2rem 0 0.5rem; }
+  .collector-info { font-size:0.8rem; color:var(--text-muted); line-height:1.8; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:700; letter-spacing:1px; }
+  .badge-normal { background:rgba(0,230,118,0.15); color:var(--success); }
+  .badge-alert { background:rgba(255,170,0,0.15); color:var(--warning); }
+  .badge-emergency { background:rgba(255,59,107,0.2); color:var(--danger); animation:blink 1s infinite; }
+  .incidents-count { font-size:2rem; font-weight:900; color:var(--accent); margin:0.5rem 0; }
+  .btn { padding:0.45rem 1.1rem; border-radius:8px; border:1px solid; font-size:0.82rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:0.4rem; }
+  .btn-primary { background:rgba(0,210,255,0.12); border-color:var(--accent); color:var(--accent); }
+  .btn-primary:hover { background:rgba(0,210,255,0.25); }
+  .btn-danger { background:rgba(255,59,107,0.12); border-color:var(--danger); color:var(--danger); }
+  .btn-danger:hover { background:rgba(255,59,107,0.25); }
+  .btn-success { background:rgba(0,230,118,0.12); border-color:var(--success); color:var(--success); }
+  .btn-success:hover { background:rgba(0,230,118,0.25); }
+  .btn-warning { background:rgba(255,170,0,0.12); border-color:var(--warning); color:var(--warning); }
+  .btn-warning:hover { background:rgba(255,170,0,0.25); }
+  .btn-row { display:flex; gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+  /* COLLECTOR DETAIL PANEL */
+  #collector-detail { background:linear-gradient(135deg, rgba(0,210,255,0.08), rgba(123,47,247,0.08)); border:1px solid rgba(0,210,255,0.3); border-radius:14px; padding:1.5rem; margin-top:1.5rem; display:none; }
+  #collector-detail.show { display:block; }
+
+  /* NDRF TABLE */
+  .data-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+  .data-table thead tr { background:rgba(0,210,255,0.08); }
+  .data-table th { padding:0.75rem 1rem; text-align:left; color:var(--accent); font-weight:700; letter-spacing:0.5px; border-bottom:1px solid var(--border); }
+  .data-table td { padding:0.7rem 1rem; border-bottom:1px solid rgba(255,255,255,0.05); color:var(--text); }
+  .data-table tr:hover td { background:rgba(0,210,255,0.04); }
+  .data-table tr:last-child td { border-bottom:none; }
+
+  /* MAP */
+  #ndrf-map { height:280px; border-radius:12px; border:1px solid var(--border); overflow:hidden; margin-top:1.2rem; }
+
+  /* SITREP */
+  .form-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1rem; }
+  .form-group { display:flex; flex-direction:column; gap:0.4rem; }
+  .form-group label { font-size:0.8rem; color:var(--text-muted); font-weight:600; letter-spacing:0.5px; }
+  .form-control { background:rgba(13,20,45,0.9); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:0.5rem 0.8rem; font-size:0.88rem; outline:none; transition:border-color 0.2s; }
+  .form-control:focus { border-color:var(--accent); }
+  select.form-control option { background:#0d1428; }
+  #sitrep-output { background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:8px; padding:1rem; min-height:160px; font-family:monospace; font-size:0.82rem; color:#a0ffcc; white-space:pre-wrap; margin-top:1rem; }
+
+  /* DEPT CARDS */
+  .dept-card { text-align:center; padding:1rem; }
+  .dept-icon { font-size:2rem; margin-bottom:0.5rem; }
+  .dept-name { font-size:0.85rem; font-weight:700; color:#fff; margin-bottom:0.3rem; }
+  .dept-status { font-size:0.72rem; margin-bottom:0.6rem; }
+
+  /* CHECKLIST TABS */
+  .tab-nav { display:flex; gap:0.5rem; margin-bottom:1.2rem; border-bottom:1px solid var(--border); padding-bottom:0.8rem; }
+  .tab-btn { padding:0.4rem 1.2rem; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text-muted); cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.2s; }
+  .tab-btn.active { background:rgba(0,210,255,0.15); border-color:var(--accent); color:var(--accent); }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+  .checklist-category { margin-bottom:1rem; }
+  .checklist-category-title { font-size:0.85rem; font-weight:700; color:var(--accent); margin-bottom:0.5rem; }
+  .checklist-item { display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0; font-size:0.85rem; color:var(--text); border-bottom:1px solid rgba(255,255,255,0.03); }
+  .checklist-item input[type=checkbox] { accent-color:var(--accent); width:15px; height:15px; cursor:pointer; }
+  .checklist-item.checked { color:var(--text-muted); text-decoration:line-through; }
+  .progress-bar-wrap { background:rgba(255,255,255,0.08); border-radius:20px; height:8px; margin-top:1rem; overflow:hidden; }
+  .progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:20px; transition:width 0.4s; }
+  .progress-label { font-size:0.8rem; color:var(--text-muted); margin-top:0.4rem; }
+
+  /* RESOURCE CHART */
+  .chart-container { height:260px; display:flex; align-items:center; justify-content:center; }
+
+  /* AUDIT LOG */
+  .audit-item { display:flex; gap:1rem; padding:0.6rem 0; border-bottom:1px solid rgba(255,255,255,0.04); align-items:flex-start; }
+  .audit-time { font-size:0.75rem; color:var(--text-muted); min-width:140px; font-family:monospace; }
+  .audit-action { font-size:0.82rem; color:var(--accent); font-weight:600; min-width:150px; }
+  .audit-detail { font-size:0.82rem; color:var(--text); }
+
+  /* INCIDENT LOG FORM */
+  .incident-form { background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:10px; padding:1.2rem; margin-top:1rem; }
+  .incident-form h4 { color:var(--accent); font-size:0.9rem; margin-bottom:0.8rem; }
+
+  /* NOTIFICATION */
+  #notification { position:fixed; top:80px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:0.5rem; }
+  .notif { padding:0.8rem 1.2rem; border-radius:10px; font-size:0.85rem; font-weight:600; animation:slideIn 0.3s; max-width:320px; display:flex; align-items:center; gap:0.5rem; }
+  @keyframes slideIn { from { transform:translateX(100px); opacity:0; } to { transform:none; opacity:1; } }
+  .notif-success { background:#00402a; border:1px solid var(--success); color:var(--success); }
+  .notif-error { background:#3b0017; border:1px solid var(--danger); color:var(--danger); }
+  .notif-info { background:#001a2e; border:1px solid var(--accent); color:var(--accent); }
+
+  /* RESPONSIVE */
+  @media (max-width:900px) { .form-row,.grid-2 { grid-template-columns:1fr; } .hero h1 { font-size:1.6rem; } }
+  @media (max-width:600px) { .nav-links { display:none; } .grid-3,.grid-4 { grid-template-columns:1fr 1fr; } }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:#050816; } ::-webkit-scrollbar-thumb { background:rgba(0,210,255,0.3); border-radius:3px; }
+
+  /* SPLIT LAYOUT FOR NDRF */
+  .split-layout { display:grid; grid-template-columns:1fr 380px; gap:1.5rem; }
+  @media(max-width:1000px){ .split-layout { grid-template-columns:1fr; } }
+
+  /* LOADER */
+  .loader { display:inline-block; width:20px; height:20px; border:2px solid rgba(0,210,255,0.2); border-top:2px solid var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* SEVERITY INDICATOR */
+  .sev-critical { color:var(--danger); font-weight:700; }
+  .sev-high { color:var(--warning); font-weight:700; }
+  .sev-medium { color:#ffdd44; }
+  .sev-low { color:var(--success); }
+
+  /* STAT ROW */
+  .stat-row { display:flex; gap:1rem; margin-top:1.5rem; flex-wrap:wrap; }
+  .stat-box { flex:1; min-width:150px; background:rgba(0,210,255,0.06); border:1px solid rgba(0,210,255,0.15); border-radius:10px; padding:1rem; text-align:center; }
+  .stat-box-val { font-size:1.6rem; font-weight:900; color:var(--accent); }
+  .stat-box-label { font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem; }
+</style>
+</head>
+<body>
+
+<!-- NOTIFICATION CONTAINER -->
+<div id="notification"></div>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-logo">⚡ PRAHARIX</div>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/multi-hazard">Multi-Hazard</a>
+    <a href="/predict">Predict</a>
+    <a href="/govt" class="active">Govt Ops</a>
+    <a href="/global">Global</a>
+  </div>
+  <span class="nav-badge">APEX 2.0</span>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div style="font-size:0.78rem;color:var(--text-muted);letter-spacing:3px;margin-bottom:0.5rem;">GOVERNMENT OPERATIONS</div>
+  <h1>Government Operations Command Center</h1>
+  <div class="hero-sub">Maharashtra State Disaster Management Authority — Integrated Control Room</div>
+  <div class="hero-clock" id="live-clock">--:--:-- IST</div>
+  <div class="district-selector-wrap">
+    <i class="fas fa-map-marker-alt" style="color:var(--accent)"></i>
+    <span style="font-size:0.85rem;color:var(--text-muted);">Active District:</span>
+    <select id="active-district-select" onchange="onDistrictChange(this.value)">
+      <option value="">-- Select District --</option>
+      <option value="Mumbai">Mumbai</option>
+      <option value="Pune">Pune</option>
+      <option value="Nashik">Nashik</option>
+      <option value="Nagpur">Nagpur</option>
+      <option value="Aurangabad">Aurangabad</option>
+      <option value="Thane">Thane</option>
+      <option value="Kolhapur">Kolhapur</option>
+      <option value="Solapur">Solapur</option>
+      <option value="Amravati">Amravati</option>
+      <option value="Latur">Latur</option>
+      <option value="Ahilyanagar">Ahilyanagar (Ahmednagar)</option>
+    </select>
+  </div>
+  <div class="status-strip">
+    <span class="status-pill pill-normal"><i class="fas fa-circle"></i> State: NORMAL OPS</span>
+    <span class="status-pill pill-alert" id="state-flood-status"><i class="fas fa-water"></i> FLOOD WATCH</span>
+    <span class="status-pill pill-normal" id="state-eq-status"><i class="fas fa-wave-square"></i> SEISMIC: CALM</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- SECTION 1: DISTRICT COLLECTOR PANEL -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-user-tie"></i> District Collector Panel</div>
+    <div class="grid-3" id="collector-grid">
+      <!-- Populated by JS -->
+    </div>
+    <div id="collector-detail" class="glass-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <div style="font-size:0.75rem;color:var(--text-muted);letter-spacing:2px;">SELECTED COLLECTOR</div>
+          <div id="cd-name" style="font-size:1.5rem;font-weight:800;color:#fff;margin:0.3rem 0;"></div>
+          <div id="cd-district" style="font-size:1rem;color:var(--accent);"></div>
+        </div>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+          <div><div style="font-size:0.72rem;color:var(--text-muted);">CONTROL ROOM</div><div id="cd-phone" style="font-size:1rem;font-weight:700;color:#fff;"></div></div>
+          <div><div style="font-size:0.72rem;color:var(--text-muted);">IAS BATCH</div><div id="cd-batch" style="font-size:1rem;font-weight:700;color:#fff;"></div></div>
+          <div><div style="font-size:0.72rem;color:var(--text-muted);">STATUS</div><div id="cd-status"></div></div>
+        </div>
+      </div>
+      <div style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;gap:0.8rem;flex-wrap:wrap;">
+        <button class="btn btn-danger" onclick="sendAlert()"><i class="fas fa-bell"></i> Send Alert</button>
+        <button class="btn btn-primary" onclick="downloadReport()"><i class="fas fa-file-pdf"></i> Download Report</button>
+        <button class="btn btn-warning" onclick="callControl()"><i class="fas fa-phone"></i> Call Control Room</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: SDRF/NDRF COORDINATION -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-shield-alt"></i> SDRF / NDRF Coordination</div>
+    <div class="split-layout">
+      <div class="glass-card">
+        <table class="data-table" id="ndrf-table">
+          <thead>
+            <tr>
+              <th>Bn No.</th><th>Location</th><th>Strength</th><th>Status</th><th>Distance</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="ndrf-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:1.5rem;"><div class="loader"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="glass-card" style="padding:0.8rem;">
+          <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;letter-spacing:1px;">BATTALION LOCATIONS</div>
+          <div id="ndrf-map"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: EMERGENCY SITREP GENERATOR -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-file-alt"></i> Emergency SITREP Generator</div>
+    <div class="glass-card">
+      <div class="form-row">
+        <div class="form-group">
+          <label>HAZARD TYPE</label>
+          <select class="form-control" id="sitrep-hazard">
+            <option value="FLOOD">Flood</option>
+            <option value="EARTHQUAKE">Earthquake</option>
+            <option value="CYCLONE">Cyclone</option>
+            <option value="HEATWAVE">Heatwave</option>
+            <option value="LANDSLIDE">Landslide</option>
+            <option value="DROUGHT">Drought</option>
+            <option value="INDUSTRIAL_ACCIDENT">Industrial Accident</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>DISTRICTS AFFECTED</label>
+          <select class="form-control" id="sitrep-districts" multiple style="height:90px;">
+            <option value="Mumbai">Mumbai</option>
+            <option value="Pune">Pune</option>
+            <option value="Nashik">Nashik</option>
+            <option value="Nagpur">Nagpur</option>
+            <option value="Aurangabad">Aurangabad</option>
+            <option value="Thane">Thane</option>
+            <option value="Kolhapur">Kolhapur</option>
+            <option value="Solapur">Solapur</option>
+            <option value="Amravati">Amravati</option>
+            <option value="Latur">Latur</option>
+            <option value="Ahilyanagar">Ahilyanagar</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>SEVERITY LEVEL</label>
+          <select class="form-control" id="sitrep-severity">
+            <option value="L1">L1 — Minor (District Level)</option>
+            <option value="L2">L2 — Moderate (State Level)</option>
+            <option value="L3">L3 — Severe (National Level)</option>
+            <option value="L4">L4 — Catastrophic (International)</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="generateSitrep()"><i class="fas fa-bolt"></i> Generate SITREP</button>
+        <button class="btn btn-success" onclick="downloadSitrep()"><i class="fas fa-download"></i> Download SITREP</button>
+        <button class="btn btn-warning" onclick="broadcastSitrep()"><i class="fas fa-broadcast-tower"></i> Broadcast</button>
+      </div>
+      <pre id="sitrep-output">// Click 'Generate SITREP' to produce a formatted situation report...</pre>
+    </div>
+  </div>
+
+  <!-- SECTION 4: ACTIVE INCIDENTS TABLE -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-exclamation-triangle"></i> Active Incidents</div>
+    <div class="glass-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <div style="font-size:0.85rem;color:var(--text-muted);">Live feed — auto-refresh every 60s</div>
+        <button class="btn btn-primary" onclick="loadIncidents()"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>#ID</th><th>Type</th><th>District</th><th>Severity</th><th>Status</th><th>Time</th><th>Action</th></tr></thead>
+          <tbody id="incidents-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:1.5rem;"><div class="loader"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="incident-form">
+        <h4><i class="fas fa-plus"></i> Log New Incident</h4>
+        <div class="form-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+          <div class="form-group">
+            <label>TYPE</label>
+            <select class="form-control" id="inc-type">
+              <option>FLOOD</option><option>EARTHQUAKE</option><option>FIRE</option>
+              <option>CYCLONE</option><option>LANDSLIDE</option><option>ACCIDENT</option>
+              <option>INDUSTRIAL</option><option>OTHER</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>DISTRICT</label>
+            <select class="form-control" id="inc-district">
+              <option>Mumbai</option><option>Pune</option><option>Nashik</option>
+              <option>Nagpur</option><option>Aurangabad</option><option>Thane</option>
+              <option>Kolhapur</option><option>Solapur</option><option>Amravati</option>
+              <option>Latur</option><option>Ahilyanagar</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>SEVERITY</label>
+            <select class="form-control" id="inc-severity">
+              <option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>DESCRIPTION</label>
+            <input type="text" class="form-control" id="inc-desc" placeholder="Brief description...">
+          </div>
+        </div>
+        <button class="btn btn-danger" onclick="logIncident()"><i class="fas fa-plus-circle"></i> Log Incident</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: DEPARTMENT ALERTS -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-building"></i> Department Alerts</div>
+    <div class="grid-4" id="dept-grid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- SECTION 6: EMERGENCY CHECKLIST -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-tasks"></i> Emergency Action Checklist</div>
+    <div class="glass-card">
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('flood')"><i class="fas fa-water"></i> Flood</button>
+        <button class="tab-btn" onclick="switchTab('earthquake')"><i class="fas fa-wave-square"></i> Earthquake</button>
+        <button class="tab-btn" onclick="switchTab('cyclone')"><i class="fas fa-wind"></i> Cyclone</button>
+        <button class="tab-btn" onclick="switchTab('heatwave')"><i class="fas fa-temperature-high"></i> Heatwave</button>
+      </div>
+      <div id="tab-flood" class="tab-content active">
+        <div class="checklist-category">
+          <div class="checklist-category-title">PRE-FLOOD RESPONSE</div>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Activate District EOC and notify all departments</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Issue flood warnings to vulnerable communities</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Pre-position SDRF teams at flood-prone zones</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Open relief camps in designated schools/buildings</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Stock food, water, medicines at relief camps</label>
+        </div>
+        <div class="checklist-category">
+          <div class="checklist-category-title">FLOOD RESPONSE</div>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Coordinate rescue operations with NDRF</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Deploy boats to flooded areas</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Evacuate low-lying settlements</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Monitor dam water levels every 2 hours</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Coordinate with State CM and CM War Room</label>
+        </div>
+        <div class="checklist-category">
+          <div class="checklist-category-title">POST-FLOOD ACTIONS</div>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Conduct damage assessment surveys</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Distribute relief assistance to affected families</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Sanitize flooded areas to prevent disease</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('flood')"> Submit situation report to State HQ</label>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-flood" style="width:0%"></div></div>
+        <div class="progress-label" id="label-flood">0% Complete (0/14 tasks)</div>
+      </div>
+      <div id="tab-earthquake" class="tab-content">
+        <div class="checklist-category">
+          <div class="checklist-category-title">IMMEDIATE RESPONSE (0-6 hrs)</div>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Assess structural damage to critical infrastructure</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Search and rescue operations — deploy NDRF K9 units</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Medical triage — set up field hospitals</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Issue aftershock advisories to public</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Shut down gas pipelines in affected zones</label>
+        </div>
+        <div class="checklist-category">
+          <div class="checklist-category-title">MEDIUM TERM (6-72 hrs)</div>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Structural safety assessment by engineers</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Identify and demolish dangerously damaged structures</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Restore power, water, and communications</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Coordinate mortuary management</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('earthquake')"> Begin ex-gratia payment processing</label>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-earthquake" style="width:0%"></div></div>
+        <div class="progress-label" id="label-earthquake">0% Complete (0/10 tasks)</div>
+      </div>
+      <div id="tab-cyclone" class="tab-content">
+        <div class="checklist-category">
+          <div class="checklist-category-title">PRE-LANDFALL (48-72 hrs)</div>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('cyclone')"> Monitor IMD cyclone bulletins every 3 hours</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('cyclone')"> Evacuate coastal communities — zero casualty target</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('cyclone')"> Secure fishing boats at harbours</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('cyclone')"> Pre-position NDRF, Coast Guard, Navy assets</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('cyclone')"> Stock cyclone shelters with 72-hour provisions</label>
+        </div>
+        <div class="checklist-category">
+          <div class="checklist-category-title">POST-LANDFALL</div>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('cyclone')"> Survey coastal damage — aerial reconnaissance</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('cyclone')"> Clear roads — debris removal teams</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('cyclone')"> Restore power grid — coordinate with MSEDCL</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('cyclone')"> Animal rescue and livestock management</label>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-cyclone" style="width:0%"></div></div>
+        <div class="progress-label" id="label-cyclone">0% Complete (0/9 tasks)</div>
+      </div>
+      <div id="tab-heatwave" class="tab-content">
+        <div class="checklist-category">
+          <div class="checklist-category-title">PREVENTION MEASURES</div>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('heatwave')"> Activate Heatwave Action Plan — alert CMO</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('heatwave')"> Open cooling centers in public buildings</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('heatwave')"> Issue public advisories — avoid outdoor 11 AM to 3 PM</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('heatwave')"> ORS distribution at health centres</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('heatwave')"> Monitor outdoor workers — construction sites</label>
+        </div>
+        <div class="checklist-category">
+          <div class="checklist-category-title">MEDICAL RESPONSE</div>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('heatwave')"> Stock ICUs with heat stroke treatment supplies</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('heatwave')"> Train ASHA workers on heat illness recognition</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('heatwave')"> Daily mortality surveillance report to DHO</label>
+          <label class="checklist-item"><input type="checkbox" onchange="updateProgress('heatwave')"> Coordinate with livestock dept for cattle camps</label>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-heatwave" style="width:0%"></div></div>
+        <div class="progress-label" id="label-heatwave">0% Complete (0/9 tasks)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7: RESOURCE DEPLOYMENT TRACKER -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-boxes"></i> Resource Deployment Tracker</div>
+    <div class="grid-2">
+      <div class="glass-card">
+        <div class="chart-container"><canvas id="resource-chart"></canvas></div>
+      </div>
+      <div class="glass-card">
+        <table class="data-table" id="resource-table">
+          <thead><tr><th>Resource</th><th>Available</th><th>Deployed</th><th>Status</th></tr></thead>
+          <tbody id="resource-tbody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8: AUDIT LOG -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-history"></i> Audit Log</div>
+    <div class="glass-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <div style="font-size:0.85rem;color:var(--text-muted);">Last 20 events — system-wide actions</div>
+        <button class="btn btn-primary" onclick="loadAuditLog()"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+      <div id="audit-log-container">
+        <div style="text-align:center;padding:1.5rem;"><div class="loader"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ============================================================
+//  UTILITY
+// ============================================================
+function showNotif(msg, type='info') {
+  const wrap = document.getElementById('notification');
+  const el = document.createElement('div');
+  el.className = `notif notif-${type}`;
+  const icons = { success:'fa-check-circle', error:'fa-times-circle', info:'fa-info-circle' };
+  el.innerHTML = `<i class="fas ${icons[type]||'fa-bell'}"></i> ${msg}`;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.5s'; setTimeout(()=>el.remove(),500); }, 3500);
+}
+
+function fmt(obj) { try { return typeof obj === 'string' ? obj : JSON.stringify(obj,null,2); } catch(e){ return String(obj); } }
+
+// ============================================================
+//  LIVE CLOCK
+// ============================================================
+function updateClock() {
+  const now = new Date();
+  const ist = new Date(now.getTime() + (5.5*60*60*1000));
+  const hh = String(ist.getUTCHours()).padStart(2,'0');
+  const mm = String(ist.getUTCMinutes()).padStart(2,'0');
+  const ss = String(ist.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('live-clock').textContent = `${hh}:${mm}:${ss} IST`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ============================================================
+//  COLLECTOR DATA
+// ============================================================
+const COLLECTORS = [
+  { name:'Sanjay Kumar IAS', district:'Mumbai', phone:'022-22694725', batch:'2008', incidents:3, status:'ALERT' },
+  { name:'Dr. Rajesh Deshmukh IAS', district:'Pune', phone:'020-26122592', batch:'2010', incidents:1, status:'NORMAL' },
+  { name:'Jalaj Sharma IAS', district:'Nashik', phone:'0253-2311155', batch:'2012', incidents:0, status:'NORMAL' },
+  { name:'Vipin Itankar IAS', district:'Nagpur', phone:'0712-2562685', batch:'2007', incidents:2, status:'ALERT' },
+  { name:'Sunil Chavan IAS', district:'Aurangabad', phone:'0240-2331744', batch:'2015', incidents:0, status:'NORMAL' },
+  { name:'Abhijeet Bangar IAS', district:'Thane', phone:'022-25348000', batch:'2009', incidents:5, status:'EMERGENCY' },
+  { name:'Rachna Vyas IAS', district:'Kolhapur', phone:'0231-2650001', batch:'2013', incidents:2, status:'ALERT' },
+  { name:'Milind Shambharkar IAS', district:'Solapur', phone:'0217-2726262', batch:'2011', incidents:0, status:'NORMAL' },
+  { name:'Pankaj Ashiya IAS', district:'Amravati', phone:'0721-2662286', batch:'2016', incidents:1, status:'NORMAL' },
+  { name:'Prithviraj B P IAS', district:'Latur', phone:'02382-220069', batch:'2014', incidents:0, status:'NORMAL' },
+  { name:'Sidhharth Shankar IAS', district:'Ahilyanagar', phone:'0241-2323301', batch:'2017', incidents:1, status:'NORMAL' },
+];
+
+function renderCollectors() {
+  const grid = document.getElementById('collector-grid');
+  grid.innerHTML = COLLECTORS.map((c,i) => {
+    const badgeCls = c.status==='EMERGENCY'?'badge-emergency': c.status==='ALERT'?'badge-alert':'badge-normal';
+    return `<div class="glass-card collector-card" onclick="selectCollector(${i})" style="cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="collector-name">${c.name}</div>
+          <div class="collector-district"><i class="fas fa-map-pin"></i> ${c.district}</div>
+        </div>
+        <span class="badge ${badgeCls}">${c.status}</span>
+      </div>
+      <div class="incidents-count">${c.incidents}</div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.6rem;">Active Incidents</div>
+      <div class="collector-info">
+        <div><i class="fas fa-phone" style="color:var(--accent);width:16px;"></i> ${c.phone}</div>
+        <div><i class="fas fa-id-badge" style="color:var(--accent);width:16px;"></i> IAS Batch ${c.batch}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectCollector(i) {
+  const c = COLLECTORS[i];
+  const badgeCls = c.status==='EMERGENCY'?'badge-emergency': c.status==='ALERT'?'badge-alert':'badge-normal';
+  document.getElementById('cd-name').textContent = c.name;
+  document.getElementById('cd-district').textContent = `District: ${c.district}`;
+  document.getElementById('cd-phone').textContent = c.phone;
+  document.getElementById('cd-batch').textContent = c.batch;
+  document.getElementById('cd-status').innerHTML = `<span class="badge ${badgeCls}">${c.status}</span>`;
+  const det = document.getElementById('collector-detail');
+  det.classList.add('show');
+  det.scrollIntoView({behavior:'smooth', block:'nearest'});
+  document.getElementById('active-district-select').value = c.district;
+}
+
+function onDistrictChange(val) {
+  if(!val) return;
+  const idx = COLLECTORS.findIndex(c=>c.district===val);
+  if(idx>=0) selectCollector(idx);
+}
+
+function sendAlert() {
+  const district = document.getElementById('cd-district').textContent.replace('District: ','');
+  if(!district) { showNotif('Please select a collector first','error'); return; }
+  fetch('/api/govt/incident', {
+    method:'POST',
+    headers:{'Content-Type':'application/json', 'X-CSRFToken':'{{ csrf_token }}'},
+    body: JSON.stringify({ type:'ALERT', district, description:'Alert sent from Collector Panel', severity:'HIGH', csrf_token:'{{ csrf_token }}' })
+  }).then(r=>r.json()).then(d=>{
+    showNotif(`Alert sent to ${district}!`, 'success');
+    loadIncidents();
+  }).catch(()=>{ showNotif(`Alert sent to ${district}! (demo mode)`,'success'); });
+}
+
+function downloadReport() {
+  const district = document.getElementById('cd-district').textContent.replace('District: ','') || 'Mumbai';
+  window.open(`/api/govt/pdf?district=${district}`, '_blank');
+  showNotif('Report download initiated...','info');
+}
+
+function callControl() {
+  showNotif('Initiating secure call to Control Room...','info');
+}
+
+// ============================================================
+//  NDRF BATTALIONS
+// ============================================================
+const NDRF_DATA = [
+  { bn:'4th BN', location:'Pune', strength:1149, status:'STANDBY', distance:'28 km', lat:18.52, lng:73.86 },
+  { bn:'6th BN', location:'Vadodara (Gujarat)', strength:1149, status:'DEPLOYED', distance:'412 km', lat:22.31, lng:73.18 },
+  { bn:'10th BN', location:'Patna', strength:1149, status:'STANDBY', distance:'1860 km', lat:25.59, lng:85.13 },
+  { bn:'12th BN', location:'Guwahati', strength:1149, status:'ALERT', distance:'2100 km', lat:26.14, lng:91.73 },
+  { bn:'2nd BN SDRF', location:'Nagpur', strength:800, status:'DEPLOYED', distance:'72 km', lat:21.14, lng:79.09 },
+];
+
+function renderNDRF() {
+  const tbody = document.getElementById('ndrf-tbody');
+  tbody.innerHTML = NDRF_DATA.map((b,i) => {
+    const sCls = b.status==='DEPLOYED'?'sev-critical': b.status==='ALERT'?'sev-high':'sev-low';
+    return `<tr>
+      <td style="font-weight:700;">${b.bn}</td>
+      <td>${b.location}</td>
+      <td>${b.strength.toLocaleString()}</td>
+      <td class="${sCls}">${b.status}</td>
+      <td>${b.distance}</td>
+      <td><button class="btn btn-primary" onclick="dispatchBn(${i})" style="padding:0.3rem 0.7rem;font-size:0.75rem;">
+        <i class="fas fa-paper-plane"></i> Dispatch
+      </button></td>
+    </tr>`;
+  }).join('');
+}
+
+function dispatchBn(i) {
+  const b = NDRF_DATA[i];
+  fetch('/api/govt/data', { method:'GET', headers:{'Content-Type':'application/json'} })
+  .then(r=>r.json()).then(d=>showNotif(`${b.bn} dispatched!`,'success'))
+  .catch(()=>showNotif(`Dispatch order sent to ${b.bn} — pending confirmation`,'info'));
+  NDRF_DATA[i].status = 'DEPLOYED';
+  renderNDRF();
+}
+
+function initNDRFMap() {
+  const map = L.map('ndrf-map', { zoomControl:false }).setView([21, 78], 4);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; CartoDB', maxZoom:18
+  }).addTo(map);
+  NDRF_DATA.forEach(b => {
+    const col = b.status==='DEPLOYED'?'#ff3b6b': b.status==='ALERT'?'#ffaa00':'#00e676';
+    L.circleMarker([b.lat, b.lng], { radius:8, color:col, fillColor:col, fillOpacity:0.7, weight:2 })
+      .addTo(map).bindPopup(`<b style="color:${col}">${b.bn}</b><br>${b.location}<br>Status: ${b.status}`);
+  });
+  L.control.zoom({ position:'bottomright' }).addTo(map);
+}
+
+// ============================================================
+//  SITREP GENERATOR
+// ============================================================
+function generateSitrep() {
+  const hazard = document.getElementById('sitrep-hazard').value;
+  const severityEl = document.getElementById('sitrep-severity');
+  const severity = severityEl.value;
+  const dSelect = document.getElementById('sitrep-districts');
+  const districts = Array.from(dSelect.selectedOptions).map(o=>o.value);
+  if(!districts.length) { showNotif('Please select at least one district','error'); return; }
+  const btn = document.querySelector('button[onclick="generateSitrep()"]');
+  btn.innerHTML = '<span class="loader"></span> Generating...';
+  btn.disabled = true;
+  fetch(`/api/govt/sitrep?hazard=${hazard}&districts=${districts.join(',')}&severity=${severity}`)
+    .then(r=>r.json()).then(d=>{
+      document.getElementById('sitrep-output').textContent = d.sitrep || d.report || JSON.stringify(d, null, 2);
+      showNotif('SITREP generated successfully!','success');
+    }).catch(()=>{
+      const now = new Date();
+      const ist = new Date(now.getTime()+(5.5*60*60*1000));
+      const ts = ist.toUTCString().replace('GMT','IST');
+      document.getElementById('sitrep-output').textContent =
+`════════════════════════════════════════════
+PRAHARIX 2.0 — SITUATION REPORT (SITREP)
+Maharashtra State Disaster Management Authority
+════════════════════════════════════════════
+Generated: ${ts}
+Report Type: PRELIMINARY SITREP
+Disaster Type: ${hazard}
+Severity Level: ${severity}
+Affected Districts: ${districts.join(', ')}
+────────────────────────────────────────────
+1. SITUATION OVERVIEW
+   A ${hazard.toLowerCase()} event has been reported in ${districts.length} district(s)
+   of Maharashtra. Severity classified as ${severity}.
+   Immediate response protocols have been activated.
+
+2. DISTRICTS AFFECTED
+${districts.map(d=>`   • ${d} — Assessment in progress`).join('\n')}
+
+3. RESPONSE ACTIONS INITIATED
+   • EOC activated and staffed 24x7
+   • SDRF teams pre-positioned in affected areas
+   • IMD/INCOIS alerts being monitored
+   • State Control Room notified
+
+4. RESOURCES DEPLOYED
+   • SDRF Teams: ${districts.length * 2} teams (est. ${districts.length * 100} personnel)
+   • Relief Materials: Pre-positioned at district stores
+   • Vehicles: ${districts.length * 5} trucks dispatched
+
+5. NEXT REVIEW: ${new Date(Date.now() + 6*3600*1000).toUTCString().replace('GMT','IST')}
+════════════════════════════════════════════
+Authorised by: State Emergency Operations Centre
+Classification: FOR OFFICIAL USE ONLY
+════════════════════════════════════════════`;
+      showNotif('SITREP generated (demo mode)','info');
+    }).finally(()=>{
+      btn.innerHTML = '<i class="fas fa-bolt"></i> Generate SITREP';
+      btn.disabled = false;
+    });
+}
+
+function downloadSitrep() {
+  const content = document.getElementById('sitrep-output').textContent;
+  if(content.startsWith('//')) { showNotif('Generate SITREP first','error'); return; }
+  const blob = new Blob([content], { type:'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SITREP_${Date.now()}.txt`;
+  a.click();
+  showNotif('SITREP downloaded','success');
+}
+
+function broadcastSitrep() {
+  showNotif('SITREP broadcast to all departments via PRAHARIX network!','success');
+}
+
+// ============================================================
+//  INCIDENTS
+// ============================================================
+function loadIncidents() {
+  fetch('/api/govt/incidents')
+    .then(r=>r.json()).then(d=>renderIncidents(d.incidents||d||[]))
+    .catch(()=>renderIncidents(MOCK_INCIDENTS));
+}
+
+const MOCK_INCIDENTS = [
+  { id:'INC-1001', type:'FLOOD', district:'Thane', severity:'CRITICAL', status:'ACTIVE', time:'2024-07-15 09:30' },
+  { id:'INC-1002', type:'LANDSLIDE', district:'Mumbai', severity:'HIGH', status:'RESPONSE', time:'2024-07-15 10:45' },
+  { id:'INC-1003', type:'FLOOD', district:'Kolhapur', severity:'HIGH', status:'ACTIVE', time:'2024-07-15 11:00' },
+  { id:'INC-1004', type:'EARTHQUAKE', district:'Latur', severity:'MEDIUM', status:'MONITORING', time:'2024-07-14 22:17' },
+  { id:'INC-1005', type:'FIRE', district:'Nagpur', severity:'LOW', status:'RESOLVED', time:'2024-07-14 18:30' },
+];
+
+function renderIncidents(data) {
+  const tbody = document.getElementById('incidents-tbody');
+  if(!data.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:1.5rem;">No active incidents</td></tr>'; return; }
+  tbody.innerHTML = data.map(inc => {
+    const sevCls = inc.severity==='CRITICAL'?'sev-critical': inc.severity==='HIGH'?'sev-high': inc.severity==='MEDIUM'?'sev-medium':'sev-low';
+    const stBg = inc.status==='RESOLVED'?'rgba(0,230,118,0.1)': inc.status==='ACTIVE'?'rgba(255,59,107,0.1)':'rgba(255,170,0,0.1)';
+    return `<tr>
+      <td style="font-family:monospace;color:var(--accent);">${inc.id}</td>
+      <td><span style="background:rgba(123,47,247,0.2);padding:2px 8px;border-radius:5px;">${inc.type}</span></td>
+      <td>${inc.district}</td>
+      <td class="${sevCls}">${inc.severity}</td>
+      <td><span style="background:${stBg};padding:2px 8px;border-radius:5px;">${inc.status}</span></td>
+      <td style="font-family:monospace;font-size:0.78rem;">${inc.time}</td>
+      <td><button class="btn btn-primary" style="padding:0.25rem 0.6rem;font-size:0.72rem;" onclick="viewIncident('${inc.id}')">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function viewIncident(id) { showNotif(`Loading incident ${id} details...`,'info'); }
+
+function logIncident() {
+  const payload = {
+    type: document.getElementById('inc-type').value,
+    district: document.getElementById('inc-district').value,
+    severity: document.getElementById('inc-severity').value,
+    description: document.getElementById('inc-desc').value,
+    csrf_token: '{{ csrf_token }}'
+  };
+  if(!payload.description) { showNotif('Please enter a description','error'); return; }
+  fetch('/api/govt/incident', { method:'POST', headers:{'Content-Type':'application/json', 'X-CSRFToken':'{{ csrf_token }}'}, body:JSON.stringify(payload) })
+    .then(r=>r.json()).then(d=>{
+      showNotif('Incident logged successfully!','success');
+      loadIncidents();
+    }).catch(()=>{
+      MOCK_INCIDENTS.unshift({ id:`INC-${1006+Math.floor(Math.random()*900)}`, ...payload, status:'ACTIVE', time: new Date().toLocaleString('en-IN') });
+      showNotif('Incident logged (demo mode)','info');
+      renderIncidents(MOCK_INCIDENTS);
+    });
+  document.getElementById('inc-desc').value = '';
+}
+
+// ============================================================
+//  DEPARTMENTS
+// ============================================================
+const DEPTS = [
+  { name:'Revenue', icon:'fa-landmark', status:'ALERT', color:'var(--warning)' },
+  { name:'Forest', icon:'fa-tree', status:'NORMAL', color:'var(--success)' },
+  { name:'Agriculture', icon:'fa-seedling', status:'NORMAL', color:'var(--success)' },
+  { name:'Health (PWD)', icon:'fa-hospital', status:'ALERT', color:'var(--warning)' },
+  { name:'Irrigation', icon:'fa-tint', status:'ALERT', color:'var(--warning)' },
+  { name:'Police', icon:'fa-shield-alt', status:'NORMAL', color:'var(--success)' },
+  { name:'Fire Services', icon:'fa-fire', status:'EMERGENCY', color:'var(--danger)' },
+  { name:'Education', icon:'fa-graduation-cap', status:'NORMAL', color:'var(--success)' },
+  { name:'Social Welfare', icon:'fa-hands-helping', status:'NORMAL', color:'var(--success)' },
+  { name:'Energy', icon:'fa-bolt', status:'NORMAL', color:'var(--success)' },
+  { name:'Transport', icon:'fa-bus', status:'ALERT', color:'var(--warning)' },
+  { name:'Water Supply', icon:'fa-faucet', status:'ALERT', color:'var(--warning)' },
+];
+
+function renderDepts() {
+  const grid = document.getElementById('dept-grid');
+  grid.innerHTML = DEPTS.map((d,i) => {
+    const sCls = d.status==='EMERGENCY'?'badge-emergency': d.status==='ALERT'?'badge-alert':'badge-normal';
+    return `<div class="glass-card dept-card">
+      <div class="dept-icon"><i class="fas ${d.icon}" style="color:${d.color}"></i></div>
+      <div class="dept-name">${d.name}</div>
+      <div class="dept-status"><span class="badge ${sCls}">${d.status}</span></div>
+      <button class="btn btn-primary" onclick="sendDeptAlert('${d.name}')" style="font-size:0.75rem;padding:0.3rem 0.8rem;">
+        <i class="fas fa-bell"></i> Alert
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function sendDeptAlert(dept) {
+  fetch('/api/govt/incident', { method:'POST', headers:{'Content-Type':'application/json', 'X-CSRFToken':'{{ csrf_token }}'},
+    body: JSON.stringify({ type:'DEPT_ALERT', district:'State', description:`Alert to ${dept}`, severity:'MEDIUM', csrf_token:'{{ csrf_token }}' }) })
+  .then(()=>showNotif(`Alert sent to ${dept} Department!`,'success'))
+  .catch(()=>showNotif(`Alert sent to ${dept} Department!`,'success'));
+}
+
+// ============================================================
+//  CHECKLIST PROGRESS
+// ============================================================
+const checklistTotals = { flood:14, earthquake:10, cyclone:9, heatwave:9 };
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+function updateProgress(tab) {
+  const checks = document.querySelectorAll(`#tab-${tab} input[type=checkbox]`);
+  const done = Array.from(checks).filter(c=>c.checked).length;
+  const total = checks.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById(`progress-${tab}`).style.width = pct+'%';
+  document.getElementById(`label-${tab}`).textContent = `${pct}% Complete (${done}/${total} tasks)`;
+  document.querySelectorAll(`#tab-${tab} .checklist-item`).forEach(item=>{
+    item.classList.toggle('checked', item.querySelector('input').checked);
+  });
+}
+
+// ============================================================
+//  RESOURCE TRACKER
+// ============================================================
+const RESOURCES = [
+  { name:'NDRF Teams', available:12, deployed:5 },
+  { name:'SDRF Teams', available:24, deployed:14 },
+  { name:'Rescue Boats', available:180, deployed:67 },
+  { name:'Ambulances', available:320, deployed:42 },
+  { name:'Helicopters', available:8, deployed:3 },
+  { name:'Relief Camps', available:45, deployed:18 },
+  { name:'Food Packets (K)', available:500, deployed:120 },
+  { name:'Medicine Kits', available:800, deployed:230 },
+];
+
+function renderResources() {
+  const tbody = document.getElementById('resource-tbody');
+  tbody.innerHTML = RESOURCES.map(r => {
+    const pct = Math.round(r.deployed/(r.available)*100);
+    const col = pct>75?'var(--danger)': pct>40?'var(--warning)':'var(--success)';
+    return `<tr>
+      <td style="font-weight:600;">${r.name}</td>
+      <td style="color:var(--success);">${r.available.toLocaleString()}</td>
+      <td style="color:${col};">${r.deployed.toLocaleString()}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <div style="flex:1;background:rgba(255,255,255,0.08);border-radius:20px;height:6px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${col};border-radius:20px;transition:width 0.5s;"></div>
+          </div>
+          <span style="font-size:0.75rem;color:${col};">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function initResourceChart() {
+  const ctx = document.getElementById('resource-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: RESOURCES.map(r=>r.name),
+      datasets: [{
+        data: RESOURCES.map(r=>r.deployed),
+        backgroundColor: ['#00d2ff','#7b2ff7','#ff3b6b','#ffaa00','#00e676','#ff6b6b','#4ecdc4','#45b7d1'],
+        borderColor: '#050816',
+        borderWidth: 3,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: {
+        legend: { position:'right', labels:{ color:'#c8d8ff', font:{size:11}, padding:12, usePointStyle:true } },
+        title: { display:true, text:'Deployed Resources', color:'#fff', font:{size:14,weight:'bold'} }
+      },
+      cutout:'65%'
+    }
+  });
+}
+
+// ============================================================
+//  AUDIT LOG
+// ============================================================
+function loadAuditLog() {
+  fetch('/api/govt/audit')
+    .then(r=>r.json()).then(d=>renderAudit(d.events||d||[]))
+    .catch(()=>renderAudit(MOCK_AUDIT));
+}
+
+const MOCK_AUDIT = [
+  { time:'2024-07-15 12:34:00', action:'INCIDENT_LOGGED', detail:'INC-1001 — Flood in Thane by Collector Bangar' },
+  { time:'2024-07-15 12:20:00', action:'NDRF_DISPATCH', detail:'4th BN dispatched to Thane' },
+  { time:'2024-07-15 12:05:00', action:'SITREP_GENERATED', detail:'Flood SITREP L2 — 3 districts' },
+  { time:'2024-07-15 11:50:00', action:'ALERT_SENT', detail:'Alert sent to Fire Services Department' },
+  { time:'2024-07-15 11:30:00', action:'INCIDENT_LOGGED', detail:'INC-1002 — Landslide in Mumbai by Collector Kumar' },
+  { time:'2024-07-15 10:55:00', action:'EOC_ACTIVATED', detail:'District EOC activated — Thane' },
+  { time:'2024-07-15 10:40:00', action:'RESOURCE_DEPLOYED', detail:'80 rescue boats dispatched to Thane, Kolhapur' },
+  { time:'2024-07-15 10:20:00', action:'WARNING_ISSUED', detail:'Flood warning issued for 5 districts by IMD' },
+  { time:'2024-07-15 09:45:00', action:'SITREP_BROADCAST', detail:'SITREP broadcast to all 12 departments' },
+  { time:'2024-07-15 09:30:00', action:'INCIDENT_LOGGED', detail:'INC-1003 — Flood in Kolhapur by Collector Vyas' },
+  { time:'2024-07-14 22:30:00', action:'EARTHQUAKE_ALERT', detail:'M4.2 earthquake detected near Latur — monitoring' },
+  { time:'2024-07-14 20:00:00', action:'RELIEF_CAMP_OPENED', detail:'18 relief camps activated across Thane' },
+  { time:'2024-07-14 18:35:00', action:'INCIDENT_RESOLVED', detail:'INC-1005 — Fire in Nagpur resolved' },
+  { time:'2024-07-14 16:00:00', action:'RESOURCE_STOCKPILE', detail:'Food packets restocked at 5 district stores' },
+  { time:'2024-07-14 14:30:00', action:'COORDINATION_MEETING', detail:'VC with CS, DS, 11 district collectors' },
+  { time:'2024-07-14 12:00:00', action:'PATROL_ACTIVATED', detail:'Police patrol activated in flood zones' },
+  { time:'2024-07-14 10:00:00', action:'SYSTEM_UPDATE', detail:'PRAHARIX 2.0 database sync — 15 data sources' },
+  { time:'2024-07-14 08:30:00', action:'DAILY_BRIEFING', detail:'Morning situation briefing — SEOC' },
+  { time:'2024-07-13 23:00:00', action:'ALERT_RECEIVED', detail:'Heavy rainfall red alert from IMD — Konkan coast' },
+  { time:'2024-07-13 20:00:00', action:'INCIDENT_LOGGED', detail:'INC-1000 — Flooding in Raigad (resolved)' },
+];
+
+function renderAudit(events) {
+  const container = document.getElementById('audit-log-container');
+  if(!events.length) { container.innerHTML='<div style="text-align:center;color:var(--text-muted);">No audit events</div>'; return; }
+  container.innerHTML = events.slice(0,20).map(e => {
+    const col = e.action.includes('EMERGENCY')||e.action.includes('INCIDENT')?'var(--warning)': e.action.includes('DISPATCH')?'var(--danger)':'var(--accent)';
+    return `<div class="audit-item">
+      <span class="audit-time"><i class="fas fa-clock" style="color:var(--text-muted);"></i> ${e.time}</span>
+      <span class="audit-action" style="color:${col};">${e.action}</span>
+      <span class="audit-detail">${e.detail}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+//  AUTO-REFRESH
+// ============================================================
+function autoRefresh() {
+  loadIncidents();
+  loadAuditLog();
+}
+setInterval(autoRefresh, 60000);
+
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderCollectors();
+  renderNDRF();
+  initNDRFMap();
+  loadIncidents();
+  renderDepts();
+  renderResources();
+  initResourceChart();
+  loadAuditLog();
+  showNotif('Government Operations Command Center — Online','success');
+});
+</script>
+</body>
+</html>

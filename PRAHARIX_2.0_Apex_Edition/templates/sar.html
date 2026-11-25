@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRAHARIX - Sentinel-1 SAR Intelligence Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background:#0a0f1f; color:#e0e6ed; min-height:100vh; padding-bottom:40px; }
+        
+        .header {
+            background: linear-gradient(180deg, #10182d 0%, #0d1326 100%);
+            padding: 25px 20px;
+            text-align: center;
+            border-bottom: 2px solid #00d4ff;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.15);
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #ff7b00, #ffd700, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+        .header p { color: #8fa0be; font-size: 13px; letter-spacing: 0.5px; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+
+        .card {
+            background: rgba(19, 29, 54, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 22px;
+            border-radius: 14px;
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .card:hover { border-color: rgba(0, 212, 255, 0.5); }
+
+        h2, h3 { color: #00d4ff; margin-bottom: 12px; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-live { background: rgba(0, 255, 136, 0.15); color: #00ff88; border: 1px solid #00ff88; }
+        .badge-threat { background: rgba(255, 123, 0, 0.15); color: #ff7b00; border: 1px solid #ff7b00; }
+
+        .metric-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
+        .metric-label { color: #8fa0be; }
+        .metric-value { font-weight: 600; color: #fff; }
+
+        .score-hero {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .score-number {
+            font-size: 52px;
+            font-weight: 900;
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+            line-height: 1;
+        }
+
+        .products-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        .products-table th { background: #0c1426; color: #00d4ff; text-align: left; padding: 10px; }
+        .products-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .products-table tr:hover { background: rgba(0, 212, 255, 0.04); }
+
+        .btn-nav {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.2), rgba(0, 150, 255, 0.3));
+            color: #00d4ff;
+            text-decoration: none;
+            border-radius: 25px;
+            border: 1px solid #00d4ff;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .btn-nav:hover { background: #00d4ff; color: #000; box-shadow: 0 0 15px #00d4ff; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🛰 PRAHARIX SAR Intelligence Center</h1>
+    <p>Copernicus Sentinel-1 Synthetic Aperture Radar (C-Band 5.405 GHz) Live Telemetry</p>
+</div>
+
+<div class="container">
+
+    <!-- TOP SUMMARY GRID -->
+    <div class="grid-3">
+        <!-- SYSTEM STATUS -->
+        <div class="card">
+            <h2>📡 Mission Link Status <span class="badge badge-live">● LIVE</span></h2>
+            <div class="metric-row"><span class="metric-label">SAR Constellation:</span><span class="metric-value">{{ sar_data.satellite }}</span></div>
+            <div class="metric-row"><span class="metric-label">Radar Payload:</span><span class="metric-value">{{ sar_data.radar_band }}</span></div>
+            <div class="metric-row"><span class="metric-label">Instrument Mode:</span><span class="metric-value">{{ sar_data.mode }}</span></div>
+            <div class="metric-row"><span class="metric-label">Polarization:</span><span class="metric-value">{{ sar_data.polarization }}</span></div>
+            <div class="metric-row"><span class="metric-label">Data Source:</span><span class="metric-value">{{ sar_data.source }}</span></div>
+            <div class="metric-row"><span class="metric-label">Status:</span><span class="metric-value" style="color:#00ff88;">✅ ONLINE (Stream Active)</span></div>
+        </div>
+
+        <!-- THREAT SCORE -->
+        <div class="card">
+            <h2>🧠 SAR Threat Assessment</h2>
+            <div class="score-hero">
+                <div class="score-number">{{ sar_data.risk_score }} <span style="font-size:22px; color:#8fa0be;">/ 100</span></div>
+                <p style="margin-top:10px;"><span class="badge badge-threat">Threat: {{ sar_data.threat_level }}</span></p>
+            </div>
+            <p style="font-size:12px; color:#b0c0d8; text-align:center; margin-top:8px;">
+                {{ sar_data.recommendation }}
+            </p>
+        </div>
+
+        <!-- RADAR METRICS -->
+        <div class="card">
+            <h2>📊 Radar Telemetry Analysis</h2>
+            <div class="metric-row"><span class="metric-label">VV Backscatter:</span><span class="metric-value" style="color:#ff7b00;">{{ sar_data.backscatter_vv }}</span></div>
+            <div class="metric-row"><span class="metric-label">VH Backscatter:</span><span class="metric-value" style="color:#00d4ff;">{{ sar_data.backscatter_vh }}</span></div>
+            <div class="metric-row"><span class="metric-label">Pol Ratio (VV/VH):</span><span class="metric-value">{{ sar_data.pol_ratio }}</span></div>
+            <div class="metric-row"><span class="metric-label">Flood Inundation Index:</span><span class="metric-value" style="color:#00ff88;">{{ sar_data.flood_index }}</span></div>
+            <div class="metric-row"><span class="metric-label">Interferometric Coherence:</span><span class="metric-value">{{ sar_data.ground_stability }}</span></div>
+            <div class="metric-row"><span class="metric-label">Latest Acquisition:</span><span class="metric-value">{{ sar_data.latest_acquisition }}</span></div>
+        </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="grid-2">
+        <div class="card">
+            <h2>📈 Radar Backscatter Profile (Cross-Track dB)</h2>
+            <canvas id="sarChart" height="150"></canvas>
+        </div>
+        <div class="card">
+            <h2>🌊 Surface Water & Flood Risk Anomaly</h2>
+            <canvas id="floodChart" height="150"></canvas>
+        </div>
+    </div>
+
+    <!-- SAR FLOOD INUNDATION & CRITICAL INFRASTRUCTURE IMPACT MATRIX -->
+    <div class="card" style="border:1px solid #ff7b00; background:rgba(20,25,45,0.95);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+            <div>
+                <h2 style="color:#ff7b00; font-size:18px;">🌊 Automated Flood Inundation & Infrastructure Impact Quantification</h2>
+                <p style="font-size:12px; color:#94a3b8;">Differential Backscatter (Δσ⁰) extraction & critical lifeline exposure analysis</p>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button id="btnSarSim" onclick="toggleSarSurge()" class="btn-nav" style="padding:7px 16px; font-size:12px; border-color:#ff7b00; color:#ff7b00; background:rgba(255,123,0,0.15);">
+                    ⚡ <span id="sarSurgeText">SIMULATE RIVER BASIN FLOOD SURGE</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid-3" style="margin-bottom:16px;">
+            <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(0,212,255,0.3); border-radius:10px; padding:14px; text-align:center;">
+                <p style="font-size:11px; color:#8fa0be;">RADAR BACKSCATTER DROP (Δσ⁰)</p>
+                <div style="font-size:32px; font-weight:900; color:#00d4ff;" id="sarDelta">{{ sar_data.impact_matrix.delta_sigma_0 }}</div>
+                <small style="color:#aaa;">Pre: {{ sar_data.impact_matrix.pre_event_sigma }} → Post: {{ sar_data.impact_matrix.post_event_sigma }}</small>
+            </div>
+            <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,123,0,0.3); border-radius:10px; padding:14px; text-align:center;">
+                <p style="font-size:11px; color:#8fa0be;">INUNDATED WATER EXPANSION</p>
+                <div style="font-size:32px; font-weight:900; color:#ff7b00;" id="sarArea">{{ sar_data.impact_matrix.inundated_area_km2 }} km²</div>
+                <small style="color:#aaa;">Extracted Water Mask Area</small>
+            </div>
+            <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,68,68,0.3); border-radius:10px; padding:14px; text-align:center;">
+                <p style="font-size:11px; color:#8fa0be;">ESTIMATED AFFECTED POPULATION</p>
+                <div style="font-size:32px; font-weight:900; color:#ff4444;" id="sarPop">{{ sar_data.impact_matrix.affected_population }}</div>
+                <small style="color:#aaa;">High-Vulnerability Demographic: {{ sar_data.impact_matrix.vulnerable_demographic }}</small>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; font-size:12px;">
+            <div style="background:rgba(0,0,0,0.35); border-radius:8px; padding:12px; border-left:3px solid #ff7b00;">
+                <b style="color:#ff7b00;">🛣 National Highways (NH) Impact:</b>
+                <p id="nhText" style="margin-top:6px; color:#cbd5e1;">NH-27 (Silchar-Guwahati corridor, km 142-158): <b>MONITORED</b></p>
+                <p style="color:#8fa0be; font-size:11px;">NH-10 (Sevoke Corridor, km 48-56): OPEN</p>
+            </div>
+            <div style="background:rgba(0,0,0,0.35); border-radius:8px; padding:12px; border-left:3px solid #ff4444;">
+                <b style="color:#ff4444;">🚆 Railway Line Disruptions:</b>
+                <p id="railText" style="margin-top:6px; color:#cbd5e1;">N.F. Railway Lumding Section: <b>CLEAR</b></p>
+                <p style="color:#8fa0be; font-size:11px;">Eastern Railway Bhagalpur Loop: NORMAL</p>
+            </div>
+            <div style="background:rgba(0,0,0,0.35); border-radius:8px; padding:12px; border-left:3px solid #ffd700;">
+                <b style="color:#ffd700;">🏥 Health & Village Access:</b>
+                <p id="villText" style="margin-top:6px; color:#cbd5e1;">Cut-Off Villages: <b>{{ sar_data.impact_matrix.villages_cut_off }}</b> | Clinics: <b>{{ sar_data.impact_matrix.hospitals_at_risk }}</b></p>
+                <p id="waterText" style="color:#ffd700; font-size:11px;">Water Contamination: {{ sar_data.impact_matrix.water_contamination_risk }}</p>
+            </div>
+            <div style="background:rgba(0,0,0,0.35); border-radius:8px; padding:12px; border-left:3px solid #00ff88;">
+                <b style="color:#00ff88;">🏕 Safe Relief Camps Capacity:</b>
+                <p style="margin-top:6px; color:#cbd5e1;">Designated Camps: <b>18 Shelters</b> (Capacity: 22,500)</p>
+                <p id="campsText" style="color:#00ff88; font-size:11px;">Available Vacant Beds: {{ sar_data.impact_matrix.relief_camps.available_beds }} (Occupancy {{ sar_data.impact_matrix.relief_camps.occupancy_rate }})</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE COPERNICUS SENTINEL-1 FEED TABLE -->
+    <div class="card">
+        <h2>🛰 Real-Time Sentinel-1 GRD Products Catalog <span class="badge badge-live">● {{ sar_data.products_count }} Live Swaths</span></h2>
+        <p style="font-size:11px; color:#8fa0be; margin-bottom:12px;">Direct OData streaming from Copernicus Data Space Ecosystem (ESA/EU)</p>
+        
+        <table class="products-table">
+            <thead>
+                <tr>
+                    <th>Product SAFE Name</th>
+                    <th>Platform</th>
+                    <th>Mode</th>
+                    <th>Polarization</th>
+                    <th>Acquisition Date</th>
+                    <th>Size</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if sar_data.products %}
+                    {% for p in sar_data.products %}
+                    <tr>
+                        <td style="font-family:monospace; color:#00d4ff; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ p.name }}">{{ p.name }}</td>
+                        <td><b>{{ p.satellite }}</b></td>
+                        <td>{{ p.mode }}</td>
+                        <td>{{ p.polarization }}</td>
+                        <td>{{ p.acquisition_time }}</td>
+                        <td>{{ p.size_gb }} GB</td>
+                        <td><span style="color:#00ff88; font-weight:700;">● {{ p.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align:center; color:#8fa0be;">No live products currently cached. Live stream syncing...</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- AI FORECAST & RESPONSE ASSETS -->
+    <div class="grid-2">
+        <div class="card">
+            <h2>🤖 AI Predictive Forecast</h2>
+            <div class="metric-row"><span class="metric-label">Next 24 Hours Risk Level:</span><span class="metric-value" style="color:#00d4ff; font-size:16px;"><b>{{ forecast.next_24h }}%</b></span></div>
+            <div class="metric-row"><span class="metric-label">Trajectory Trend:</span><span class="metric-value"><b>{{ forecast.trend }}</b></span></div>
+            <div class="metric-row"><span class="metric-label">SAR Swath Revisit Window:</span><span class="metric-value">12 - 36 Hours</span></div>
+            <div class="metric-row"><span class="metric-label">AI Fusion Confidence:</span><span class="metric-value">94.8%</span></div>
+        </div>
+
+        <div class="card">
+            <h2>🛡 Operational Response Assets</h2>
+            {% for asset in response_assets %}
+            <div class="metric-row">
+                <span class="metric-label">{{ asset.name }}</span>
+                <span class="metric-value" style="color:{% if asset.status == 'ACTIVE' or asset.status == 'ONLINE' %}#00ff88{% elif asset.status == 'READY' %}#00d4ff{% else %}#ffd700{% endif %};">
+                    ● {{ asset.status }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div style="text-align:center; margin-top:30px; display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+        <a href="/apex" class="btn-nav" style="background:#00d4ff; color:#000; box-shadow:0 0 15px #00d4ff;">⚡ Open APEX Command Hub</a>
+        <a href="/" class="btn-nav">⬅ Back To Mission Control Dashboard</a>
+    </div>
+
+</div>
+
+<script>
+// Backscatter Profile Chart
+new Chart(document.getElementById('sarChart'), {
+    type: 'line',
+    data: {
+        labels: ['-30km', '-20km', '-10km', 'Nadir/Center', '+10km', '+20km', '+30km'],
+        datasets: [
+            {
+                label: 'VV dB (Co-Pol)',
+                data: [-22, -18, -15, -22, -14, -16, -19],
+                borderColor: '#ff7b00',
+                backgroundColor: 'rgba(255, 123, 0, 0.12)',
+                fill: true,
+                tension: 0.4
+            },
+            {
+                label: 'VH dB (Cross-Pol)',
+                data: [-28, -25, -22, -28, -21, -23, -26],
+                borderColor: '#00d4ff',
+                backgroundColor: 'rgba(0, 212, 255, 0.12)',
+                fill: true,
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: '#8fa0be' } }
+        },
+        scales: {
+            x: { ticks: { color: '#8fa0be' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { ticks: { color: '#8fa0be' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+    }
+});
+
+// Flood & Deformation Bar Chart
+new Chart(document.getElementById('floodChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Open Water', 'Flood Zone', 'Dry Soil', 'Urban Surface'],
+        datasets: [{
+            data: [42, 14, 28, 16],
+            backgroundColor: ['#00d4ff', '#ff7b00', '#00ff88', '#ffd700'],
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            x: { ticks: { color: '#8fa0be' }, grid: { display: false } },
+            y: { ticks: { color: '#8fa0be' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+    }
+});
+
+let isSurgeActive = false;
+function toggleSarSurge() {
+    isSurgeActive = !isSurgeActive;
+    const txt = document.getElementById('sarSurgeText');
+    txt.textContent = isSurgeActive ? "RESET TO BASELINE MONITORING" : "SIMULATE RIVER BASIN FLOOD SURGE";
+
+    fetch(`/api/sar/simulate?flood=${isSurgeActive}`)
+        .then(r => r.json())
+        .then(d => {
+            const m = d.impact_matrix;
+            document.getElementById('sarDelta').textContent = m.delta_sigma_0;
+            document.getElementById('sarArea').textContent = `${m.inundated_area_km2} km²`;
+            document.getElementById('sarPop').textContent = m.affected_population.toLocaleString();
+            document.getElementById('waterText').textContent = `Water Contamination: ${m.water_contamination_risk}`;
+            document.getElementById('villText').textContent = `Cut-Off Villages: ${m.villages_cut_off} | Clinics: ${m.hospitals_at_risk}`;
+            document.getElementById('campsText').textContent = `Available Vacant Beds: ${m.relief_camps.available_beds} (Occupancy ${m.relief_camps.occupancy_rate})`;
+
+            if (isSurgeActive) {
+                document.getElementById('nhText').innerHTML = `NH-27 (Silchar-Guwahati corridor, km 142-158): <span style="color:#ff4444; font-weight:700;">IMPASSABLE</span>`;
+                document.getElementById('railText').innerHTML = `N.F. Railway Lumding Section: <span style="color:#ff4444; font-weight:700;">SUSPENDED (18.4 km submerged)</span>`;
+            } else {
+                document.getElementById('nhText').innerHTML = `NH-27 (Silchar-Guwahati corridor, km 142-158): <span style="color:#00ff88; font-weight:700;">OPEN / MONITORED</span>`;
+                document.getElementById('railText').innerHTML = `N.F. Railway Lumding Section: <span style="color:#00ff88; font-weight:700;">CLEAR</span>`;
+            }
+        });
+}
+</script>
+
+</body>
+</html>

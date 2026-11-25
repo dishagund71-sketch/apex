@@ -1,0 +1,3437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRAHARIX 2.0 — AI Prediction & Early Warning Command Center</title>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+/* =====================================================================
+   PRAHARIX 2.0 APEX COMMAND CENTER — TACTICAL DARK UI THEME
+   ===================================================================== */
+:root {
+  --bg-primary: #030712;
+  --bg-secondary: #0b1329;
+  --bg-card: rgba(11, 19, 41, 0.88);
+  --bg-card-hover: rgba(16, 28, 60, 0.94);
+  --border-subtle: rgba(0, 191, 255, 0.18);
+  --border-highlight: rgba(0, 191, 255, 0.55);
+  --accent-cyan: #00bfff;
+  --accent-green: #00e676;
+  --accent-amber: #ffd700;
+  --accent-orange: #ff9100;
+  --accent-red: #ff1744;
+  --accent-purple: #b388ff;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --glow-cyan: 0 0 16px rgba(0, 191, 255, 0.4);
+  --glow-red: 0 0 18px rgba(255, 23, 68, 0.5);
+  --glow-green: 0 0 16px rgba(0, 230, 118, 0.4);
+  --glow-amber: 0 0 16px rgba(255, 215, 0, 0.4);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(0, 191, 255, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 10%, rgba(179, 136, 255, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 90%, rgba(0, 230, 118, 0.05) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(3, 7, 18, 0.95);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 191, 255, 0.35);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+/* =====================================================================
+   TOP COMMAND NAVBAR
+   ===================================================================== */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 28px;
+  background: rgba(5, 11, 26, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-brand-logo {
+  font-size: 26px;
+  filter: drop-shadow(0 0 8px var(--accent-cyan));
+  animation: pulseLogo 3s infinite ease-in-out;
+}
+@keyframes pulseLogo {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px var(--accent-cyan)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 14px var(--accent-cyan)); }
+}
+.nav-brand-text h1 {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #ff7b00, #ffd700, #00e676, #00bfff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+}
+.nav-brand-text p {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.6px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nav-btn {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.nav-btn:hover {
+  background: rgba(0, 191, 255, 0.15);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 191, 255, 0.3);
+}
+.nav-btn.active {
+  background: rgba(0, 191, 255, 0.22);
+  color: #fff;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 16px rgba(0, 191, 255, 0.45);
+}
+
+.nav-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+}
+.telemetry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  background: rgba(0, 230, 118, 0.08);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  border-radius: 16px;
+  color: var(--accent-green);
+  font-weight: 700;
+  font-size: 11px;
+}
+.telemetry-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green);
+  animation: blink 1.2s infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* =====================================================================
+   CONTAINER & LAYOUT
+   ===================================================================== */
+.dashboard-container {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Top Hero Banner */
+.hero-banner {
+  background: linear-gradient(135deg, rgba(14, 25, 55, 0.9) 0%, rgba(6, 12, 28, 0.95) 100%);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--accent-cyan);
+  border-radius: 18px;
+  padding: 26px 30px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+}
+.hero-banner::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(0, 191, 255, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  position: relative;
+  z-index: 2;
+}
+.hero-title h2 {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  background: linear-gradient(90deg, #ffffff, #c2e9fb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-title p {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 5px;
+  max-width: 780px;
+  line-height: 1.5;
+}
+.hero-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.badge-tech {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Strategic Metric Quick Stats */
+.metric-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 2;
+}
+.metric-card {
+  background: rgba(5, 12, 28, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.metric-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-highlight);
+}
+.metric-icon-wrap {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+.metric-info .label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.metric-info .value {
+  font-size: 24px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.15;
+  margin-top: 2px;
+}
+.metric-info .sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* =====================================================================
+   GENERIC SECTION CARD STYLING
+   ===================================================================== */
+.section-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 26px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.25s ease;
+}
+.section-card:hover {
+  border-color: rgba(0, 191, 255, 0.35);
+}
+.section-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.section-card-header .title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-badge-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(0, 191, 255, 0.15);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+}
+.section-title-text h3 {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #fff;
+}
+.section-title-text p {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.section-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Generic Button */
+.btn-action {
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--accent-cyan);
+  background: rgba(0, 191, 255, 0.12);
+  color: var(--accent-cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.btn-action:hover {
+  background: rgba(0, 191, 255, 0.28);
+  box-shadow: var(--glow-cyan);
+  transform: translateY(-1px);
+}
+.btn-action.red {
+  border-color: var(--accent-red);
+  background: rgba(255, 23, 68, 0.12);
+  color: var(--accent-red);
+}
+.btn-action.red:hover {
+  background: rgba(255, 23, 68, 0.28);
+  box-shadow: var(--glow-red);
+}
+.btn-action.green {
+  border-color: var(--accent-green);
+  background: rgba(0, 230, 118, 0.12);
+  color: var(--accent-green);
+}
+.btn-action.green:hover {
+  background: rgba(0, 230, 118, 0.28);
+  box-shadow: var(--glow-green);
+}
+.btn-action.amber {
+  border-color: var(--accent-amber);
+  background: rgba(255, 215, 0, 0.12);
+  color: var(--accent-amber);
+}
+.btn-action.amber:hover {
+  background: rgba(255, 215, 0, 0.28);
+  box-shadow: var(--glow-amber);
+}
+
+/* =====================================================================
+   SECTION 1: AI SITUATION SUMMARIZER
+   ===================================================================== */
+.sitrep-box {
+  background: rgba(5, 11, 26, 0.7);
+  border: 1px solid rgba(0, 191, 255, 0.25);
+  border-radius: 14px;
+  padding: 20px;
+  position: relative;
+}
+.sitrep-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sitrep-headline {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sitrep-timer-tag {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sitrep-timer-tag b {
+  color: var(--accent-cyan);
+}
+.sitrep-content {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #e2e8f0;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  padding: 16px;
+  border-left: 3px solid var(--accent-cyan);
+  min-height: 90px;
+}
+.sitrep-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.sitrep-stat-pill {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sitrep-stat-pill span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.sitrep-stat-pill strong {
+  font-size: 13px;
+  color: #fff;
+}
+
+/* Language selector */
+.lang-btn-group {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 2px;
+  overflow: hidden;
+}
+.lang-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lang-btn.active {
+  background: var(--accent-cyan);
+  color: #030712;
+  box-shadow: 0 0 10px rgba(0, 191, 255, 0.4);
+}
+
+/* =====================================================================
+   SECTION 2: NATURAL LANGUAGE DISASTER QUERY
+   ===================================================================== */
+.query-box-wrap {
+  position: relative;
+  margin-bottom: 14px;
+}
+.query-input-row {
+  display: flex;
+  gap: 10px;
+  background: rgba(5, 11, 26, 0.85);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 6px 8px 6px 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  align-items: center;
+}
+.query-input-row:focus-within {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 20px rgba(0, 191, 255, 0.25);
+}
+.query-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+.query-input::placeholder {
+  color: var(--text-dim);
+}
+.suggested-queries {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.query-chip {
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.query-chip:hover {
+  background: rgba(0, 191, 255, 0.12);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+/* Query Answer Card */
+.query-result-card {
+  background: rgba(5, 11, 26, 0.9);
+  border: 1px solid rgba(0, 191, 255, 0.35);
+  border-radius: 14px;
+  padding: 20px;
+  display: none;
+  position: relative;
+  overflow: hidden;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.qr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.qr-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.qr-info-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 12px;
+}
+.qr-info-box h5 {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.qr-info-box p {
+  font-size: 12.5px;
+  color: #fff;
+  line-height: 1.4;
+}
+
+/* =====================================================================
+   SECTION 3: AI EMERGENCY RECOMMENDATIONS
+   ===================================================================== */
+.rec-filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.rec-filter-btn {
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.rec-filter-btn.active {
+  background: var(--accent-cyan);
+  color: #030712;
+  border-color: var(--accent-cyan);
+}
+.rec-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rec-item {
+  background: rgba(5, 11, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 0.2s ease;
+  border-left: 4px solid var(--accent-cyan);
+  flex-wrap: wrap;
+}
+.rec-item:hover {
+  background: rgba(12, 22, 48, 0.85);
+  border-color: rgba(0, 191, 255, 0.4);
+  transform: translateX(3px);
+}
+.rec-item.priority-p1 { border-left-color: var(--accent-red); }
+.rec-item.priority-p2 { border-left-color: var(--accent-orange); }
+.rec-item.priority-p3 { border-left-color: var(--accent-amber); }
+.rec-item.priority-p4 { border-left-color: var(--accent-green); }
+
+.rec-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 280px;
+}
+.rec-rank {
+  font-size: 14px;
+  font-weight: 900;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.rec-details h4 {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rec-details p {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.rec-meta-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.rec-meta-pill {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+}
+.rec-meta-pill strong {
+  color: #fff;
+}
+
+/* =====================================================================
+   SECTION 4: EXPLAINABLE AI (XAI) RISK ASSESSMENT
+   ===================================================================== */
+.xai-top-row {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+@media (max-width: 900px) {
+  .xai-top-row { grid-template-columns: 1fr; }
+}
+.xai-score-donut-box {
+  background: rgba(5, 11, 26, 0.7);
+  border: 1px solid rgba(0, 191, 255, 0.25);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+}
+.xai-gauge-val {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(90deg, #ff1744, #ff9100);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 8px 0;
+}
+.xai-hazard-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.xai-tab-btn {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.xai-tab-btn.active {
+  background: var(--accent-cyan);
+  color: #030712;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 191, 255, 0.4);
+}
+
+.xai-factors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.factor-row {
+  background: rgba(5, 11, 26, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+.factor-info-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.factor-info-line .name {
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.factor-info-line .weight {
+  font-size: 11px;
+  color: var(--accent-cyan);
+  font-weight: 700;
+}
+.factor-bar-track {
+  width: 100%;
+  height: 9px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+.factor-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+.factor-sub-note {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  margin-top: 5px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* =====================================================================
+   SECTION 5: WHAT-IF DISASTER SIMULATION
+   ===================================================================== */
+.whatif-grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 22px;
+}
+@media (max-width: 1080px) {
+  .whatif-grid { grid-template-columns: 1fr; }
+}
+.whatif-controls {
+  background: rgba(5, 11, 26, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 20px;
+}
+.slider-group {
+  margin-bottom: 16px;
+}
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.slider-header label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+.slider-val-tag {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  background: rgba(0, 191, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 191, 255, 0.3);
+}
+.slider-control {
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.slider-control::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  border: 2px solid #fff;
+  box-shadow: 0 0 10px var(--accent-cyan);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.slider-control::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.whatif-select-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.custom-select-box {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.custom-select-box label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.tactical-select {
+  background: #060d1f;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+.tactical-select:focus {
+  border-color: var(--accent-cyan);
+}
+
+.whatif-results-board {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.impact-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.impact-kpi-card {
+  background: rgba(5, 11, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+.impact-kpi-card .kpi-label {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.impact-kpi-card .kpi-number {
+  font-size: 26px;
+  font-weight: 900;
+  margin: 6px 0;
+}
+.impact-kpi-card .kpi-foot {
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+.cascade-timeline-box {
+  background: rgba(5, 11, 26, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px;
+}
+.cascade-stage-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+.stage-bullet {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.stage-text h5 {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #fff;
+}
+.stage-text p {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* =====================================================================
+   SECTION 6: HISTORICAL DISASTER PATTERN ANALYSIS
+   ===================================================================== */
+.history-grid-2 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 1024px) {
+  .history-grid-2 { grid-template-columns: 1fr; }
+}
+.heatmap-calendar {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+  margin-top: 14px;
+}
+.cal-cell {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 4px;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.cal-cell:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-cyan);
+}
+.cal-month {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.cal-count {
+  font-size: 15px;
+  font-weight: 900;
+  margin-top: 4px;
+  color: #fff;
+}
+
+/* =====================================================================
+   SECTION 7: PREDICTIVE RISK COMPARISON (DISTRICTS)
+   ===================================================================== */
+.district-comp-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1200px) {
+  .district-comp-grid { grid-template-columns: 1fr 1fr; }
+  .district-comp-center { grid-column: span 2; }
+}
+@media (max-width: 800px) {
+  .district-comp-grid { grid-template-columns: 1fr; }
+  .district-comp-center { grid-column: span 1; }
+}
+.district-info-card {
+  background: rgba(5, 11, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 20px;
+}
+.district-radar-wrap {
+  background: rgba(5, 11, 26, 0.65);
+  border: 1px solid rgba(0, 191, 255, 0.2);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* =====================================================================
+   SECTION 8: AI DECISION SUPPORT (DECISION TREE)
+   ===================================================================== */
+.dt-tree-container {
+  background: rgba(4, 8, 20, 0.8);
+  border: 1px solid rgba(0, 191, 255, 0.25);
+  border-radius: 14px;
+  padding: 24px;
+  position: relative;
+  overflow-x: auto;
+}
+.dt-tree-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 800px;
+}
+.dt-node-row {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  position: relative;
+}
+.dt-node {
+  background: rgba(11, 19, 41, 0.95);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 14px 18px;
+  min-width: 230px;
+  max-width: 290px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.dt-node:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-cyan);
+  box-shadow: var(--glow-cyan);
+}
+.dt-node.root-node {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 191, 255, 0.12);
+}
+.dt-node.action-critical {
+  border-color: var(--accent-red);
+  background: rgba(255, 23, 68, 0.12);
+}
+.dt-node.action-high {
+  border-color: var(--accent-orange);
+  background: rgba(255, 145, 0, 0.12);
+}
+.dt-node.action-monitor {
+  border-color: var(--accent-green);
+  background: rgba(0, 230, 118, 0.12);
+}
+.dt-node-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dt-node-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+.dt-node-sop {
+  font-size: 9.5px;
+  color: var(--accent-cyan);
+  margin-top: 6px;
+  font-weight: 700;
+}
+.dt-connector-line {
+  width: 2px;
+  height: 20px;
+  background: rgba(0, 191, 255, 0.35);
+  margin: 0 auto;
+}
+
+/* =====================================================================
+   SECTION 9: 4-DAY WEATHER FORECAST
+   ===================================================================== */
+.forecast-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.forecast-card {
+  background: rgba(5, 11, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 18px;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.forecast-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-highlight);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+.fc-date-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.fc-date-line h4 {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+.fc-date-line span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.fc-weather-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.fc-weather-icon {
+  font-size: 34px;
+}
+.fc-temp-display .current {
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+}
+.fc-temp-display .range {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.fc-stats-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+.fc-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* =====================================================================
+   SECTION 10: PREDICTION CONFIDENCE DASHBOARD
+   ===================================================================== */
+.conf-gauges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.conf-gauge-card {
+  background: rgba(5, 11, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+.conf-gauge-chart-wrap {
+  position: relative;
+  width: 130px;
+  height: 90px;
+  margin: 0 auto;
+}
+.conf-gauge-center-text {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+}
+.conf-hazard-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #e2e8f0;
+  margin-top: 10px;
+}
+
+.conf-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 900px) {
+  .conf-bottom-grid { grid-template-columns: 1fr; }
+}
+
+.telemetry-health-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.telemetry-health-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.telemetry-health-table td:first-child {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.telemetry-health-table td:last-child {
+  text-align: right;
+  font-weight: 800;
+}
+
+/* Print Stylesheet for Decision Tree / Report */
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .navbar, .hero-badges, .btn-action, .suggested-queries, .slider-control { display: none !important; }
+  .section-card { border: 1px solid #ccc !important; box-shadow: none !important; page-break-inside: avoid; }
+  .dt-tree-container { background: #fff !important; border: 1px solid #999 !important; }
+  .dt-node { border: 1px solid #333 !important; color: #000 !important; background: #f8f9fa !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- =====================================================================
+     TACTICAL COMMAND NAVBAR
+     ===================================================================== -->
+<header class="navbar">
+  <div class="nav-brand">
+    <span class="nav-brand-logo">🛰️</span>
+    <div class="nav-brand-text">
+      <h1>PRAHARIX 2.0 APEX EDITION</h1>
+      <p>AI Multi-Hazard Prediction & Early Warning Nerve Center</p>
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <a href="/" class="nav-btn">🌐 Command HQ</a>
+    <a href="/apex" class="nav-btn">⚡ Apex Hub</a>
+    <a href="/multihazard" class="nav-btn">🌋 Multi-Hazard</a>
+    <a href="/predict" class="nav-btn active">🔮 AI Prediction Center</a>
+    <a href="/sar" class="nav-btn">🛰️ SAR Radar</a>
+    <a href="/india" class="nav-btn">🇮🇳 India Strategic</a>
+    <a href="/alerts" class="nav-btn">🚨 Tactical Alerts</a>
+    <a href="/history" class="nav-btn">📜 Audit History</a>
+  </nav>
+
+  <div class="nav-telemetry">
+    <div class="telemetry-pill">
+      <span class="telemetry-dot"></span>
+      <span id="nav-system-status">NEURAL ENGINE ACTIVE</span>
+    </div>
+    <div style="font-size:11px; color:var(--accent-cyan); font-weight:700;">
+      IST <span id="clock-ist">--:--:--</span>
+    </div>
+  </div>
+</header>
+
+<!-- =====================================================================
+     MAIN DASHBOARD WRAPPER
+     ===================================================================== -->
+<main class="dashboard-container">
+
+  <!-- TOP HERO STRATEGIC BRIEFING -->
+  <section class="hero-banner">
+    <div class="hero-header-row">
+      <div class="hero-title">
+        <h2>AI PREDICTION & STRATEGIC EARLY WARNING CENTER</h2>
+        <p>
+          Next-generation deep ensemble multi-hazard forecasting matrix fusing Physics-Informed Neural Networks (PINN), 
+          Copernicus SAR Radar, IMD Doppler imagery, and hydrological domino cascades. 
+          ITU-T & NDMA SOP compliant decision telemetry.
+        </p>
+      </div>
+
+      <div class="hero-badges">
+        <span class="badge-tech" style="border-color:var(--accent-cyan); color:var(--accent-cyan);">⚡ PINN ENSEMBLE v4.2</span>
+        <span class="badge-tech" style="border-color:var(--accent-green); color:var(--accent-green);">🛰️ SENTINEL-1 SAR COHERENCE</span>
+        <span class="badge-tech" style="border-color:var(--accent-amber); color:var(--accent-amber);">🌪️ IMD DOPPLER RADAR</span>
+        <span class="badge-tech" style="border-color:var(--accent-red); color:var(--accent-red);">🚨 NDMA CAP v1.2</span>
+      </div>
+    </div>
+
+    <!-- 4 TOP LEVEL METRICS -->
+    <div class="metric-grid-4">
+      <div class="metric-card">
+        <div class="metric-icon-wrap" style="color:var(--accent-red); background:rgba(255,23,68,0.12);">⚠️</div>
+        <div class="metric-info">
+          <div class="label">Composite Threat Level</div>
+          <div class="value" id="kpi-threat-level" style="color:var(--accent-red);">ELEVATED</div>
+          <div class="sub">National composite index: <b id="kpi-composite-score">78</b> / 100</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon-wrap" style="color:var(--accent-cyan); background:rgba(0,191,255,0.12);">👥</div>
+        <div class="metric-info">
+          <div class="label">Population at Risk</div>
+          <div class="value" id="kpi-pop-risk">2.41M</div>
+          <div class="sub">Across 4 high-vulnerability districts</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon-wrap" style="color:var(--accent-amber); background:rgba(255,215,0,0.12);">🌊</div>
+        <div class="metric-info">
+          <div class="label">Active Warning Corridors</div>
+          <div class="value" id="kpi-active-corridors">7 Zones</div>
+          <div class="sub">Krishna, Godavari & Koyna basins</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon-wrap" style="color:var(--accent-green); background:rgba(0,230,118,0.12);">🛡️</div>
+        <div class="metric-info">
+          <div class="label">NDRF / SDRF Readiness</div>
+          <div class="value" id="kpi-readiness">96.4%</div>
+          <div class="sub">16 Battalions synchronized & armed</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 1: AI DISASTER SITUATION SUMMARIZER
+       ===================================================================== -->
+  <section class="section-card" id="sec-summarizer">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">01</div>
+        <div class="section-title-text">
+          <h3>AI Disaster Situation Summarizer</h3>
+          <p>Autonomous LLM multi-source situational synthesis & tactical operational briefing</p>
+        </div>
+      </div>
+
+      <div class="section-controls">
+        <!-- Language selector toggle -->
+        <div class="lang-btn-group">
+          <button class="lang-btn active" id="btn-lang-en" onclick="setLanguage('en')">English (EN)</button>
+          <button class="lang-btn" id="btn-lang-hi" onclick="setLanguage('hi')">हिन्दी (HI)</button>
+          <button class="lang-btn" id="btn-lang-mr" onclick="setLanguage('mr')">मराठी (MR)</button>
+        </div>
+
+        <button class="btn-action" onclick="refreshSummary(true)">
+          🔄 <span>Regenerate SITREP</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="sitrep-box">
+      <div class="sitrep-top">
+        <div class="sitrep-headline">
+          <span style="font-size:20px;">📢</span>
+          <span id="sitrep-title">NATIONAL MULTI-HAZARD SITUATIONAL BRIEFING</span>
+          <span class="badge-tech" id="sitrep-risk-tag" style="border-color:var(--accent-red); color:var(--accent-red);">RISK: LEVEL-4 HIGH</span>
+        </div>
+
+        <div class="sitrep-timer-tag">
+          ⏱️ Auto-updates in: <b id="sitrep-countdown">04:59</b>
+        </div>
+      </div>
+
+      <div class="sitrep-content" id="sitrep-body-text">
+        Initializing AI Situation Summarizer from neural command endpoints... Fetching multi-source telemetry from USGS, IMD Doppler, and Copernicus Sentinel-1 radar nodes.
+      </div>
+
+      <!-- Quick Metrics row -->
+      <div class="sitrep-metrics-row">
+        <div class="sitrep-stat-pill">
+          <span>Primary Hazard</span>
+          <strong id="sitrep-hazard-type" style="color:var(--accent-cyan);">🌊 Hydrological (Flood / Inundation)</strong>
+        </div>
+        <div class="sitrep-stat-pill">
+          <span>Epicenter / High Zone</span>
+          <strong id="sitrep-high-zone">Kolhapur & Panchganga Basin</strong>
+        </div>
+        <div class="sitrep-stat-pill">
+          <span>Projected Lead Time</span>
+          <strong id="sitrep-lead-time" style="color:var(--accent-amber);">14.5 Hours Window</strong>
+        </div>
+        <div class="sitrep-stat-pill">
+          <span>SOP Readiness Code</span>
+          <strong id="sitrep-sop-code" style="color:var(--accent-green);">NDMA-RED-ACT-04</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 2: NATURAL LANGUAGE DISASTER QUERY
+       ===================================================================== -->
+  <section class="section-card" id="sec-nlquery">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">02</div>
+        <div class="section-title-text">
+          <h3>Natural Language Disaster Query Engine</h3>
+          <p>Query tactical models, river telemetry, seismic risks, and SOPs in plain English, Hindi, or Marathi</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Query input row -->
+    <div class="query-box-wrap">
+      <div class="query-input-row">
+        <span style="font-size:18px;">🔍</span>
+        <input type="text" id="nl-query-input" class="query-input" 
+               placeholder="Ask anything (e.g. 'What is flood risk in Pune?', 'Will Koyna dam breach?', 'Evacuation plan for Raigad?')..." 
+               onkeydown="if(event.key==='Enter') executeNLQuery();">
+        <button class="btn-action" onclick="executeNLQuery()">
+          ⚡ <span>Run AI Query</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Suggested quick chips -->
+    <div class="suggested-queries">
+      <span style="font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:4px;">💡 Quick Prompts:</span>
+      <span class="query-chip" onclick="setQuery('What is flood risk in Pune & Mula-Mutha basin?')">🌊 Flood risk in Pune</span>
+      <span class="query-chip" onclick="setQuery('Is there Koyna dam seismic hazard for Western Maharashtra?')">⚡ Koyna seismic hazard</span>
+      <span class="query-chip" onclick="setQuery('What is cyclone landfall trajectory for Konkan & Mumbai?')">🌀 Cyclone landfall in Konkan</span>
+      <span class="query-chip" onclick="setQuery('Landslide vulnerability status in Raigad & Mahad ghats')">⛰️ Raigad landslide status</span>
+      <span class="query-chip" onclick="setQuery('Explain 4-day rainfall outlook for Vidarbha & Nagpur')">🌦️ 4-day outlook for Nagpur</span>
+    </div>
+
+    <!-- Structured Result Card -->
+    <div class="query-result-card" id="query-result-card">
+      <div class="qr-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;" id="qr-icon">💡</span>
+          <div>
+            <h4 style="font-size:15px; font-weight:800; color:#fff;" id="qr-target-title">Analysis Result</h4>
+            <span style="font-size:11px; color:var(--text-muted);" id="qr-timestamp">Processed via PRAHARIX Neural Intent Model</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <span class="badge-tech" id="qr-risk-badge" style="border-color:var(--accent-red); color:var(--accent-red);">RISK: HIGH (79/100)</span>
+          <span class="badge-tech" id="qr-confidence-badge" style="border-color:var(--accent-green); color:var(--accent-green);">CONFIDENCE: 94.8%</span>
+        </div>
+      </div>
+
+      <div style="font-size:13.5px; line-height:1.6; color:#e2e8f0; margin-bottom:14px;" id="qr-direct-answer">
+        <!-- Direct Answer will be injected here -->
+      </div>
+
+      <div class="qr-grid-3">
+        <div class="qr-info-box">
+          <h5>📍 Affected Vulnerable Zones</h5>
+          <p id="qr-affected-zones">Pune Municipal wards 4, 7, Sangam Bridge corridor, Alandi lowlands</p>
+        </div>
+        <div class="qr-info-box">
+          <h5>🔬 Primary Contributing Drivers</h5>
+          <p id="qr-key-factors">Khadakwasla discharge at 34,000 cusecs, 118mm/24h catchment precipitation</p>
+        </div>
+        <div class="qr-info-box">
+          <h5>🛡️ Recommended Action Guidance</h5>
+          <p id="qr-action-guidance" style="color:var(--accent-amber);">Activate Tier-2 flood relief, pre-position SDRF at Deccan Gymkhana</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 3: AI EMERGENCY RECOMMENDATIONS
+       ===================================================================== -->
+  <section class="section-card" id="sec-recommendations">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">03</div>
+        <div class="section-title-text">
+          <h3>AI Emergency Tactical Recommendations</h3>
+          <p>Prioritized operational imperatives categorized by Evacuate, Monitor, Deploy & Alert protocols</p>
+        </div>
+      </div>
+
+      <div class="section-controls">
+        <button class="btn-action green" onclick="exportTacticalIAP()">
+          📋 <span>Export NDMA IAP Matrix</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Category Filters -->
+    <div class="rec-filter-bar">
+      <button class="rec-filter-btn active" onclick="filterRecommendations('ALL')">All Directives (10)</button>
+      <button class="rec-filter-btn" onclick="filterRecommendations('EVACUATE')">🚨 Evacuate</button>
+      <button class="rec-filter-btn" onclick="filterRecommendations('DEPLOY')">🚒 Deploy Force</button>
+      <button class="rec-filter-btn" onclick="filterRecommendations('ALERT')">📢 Public Alert</button>
+      <button class="rec-filter-btn" onclick="filterRecommendations('MONITOR')">🛰️ Monitor</button>
+    </div>
+
+    <!-- Recommendations Cards -->
+    <div class="rec-cards-list" id="rec-cards-container">
+      <!-- 10 dynamic recommendations will be populated here -->
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 4: EXPLAINABLE AI (XAI) RISK ASSESSMENT
+       ===================================================================== -->
+  <section class="section-card" id="sec-xai">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">04</div>
+        <div class="section-title-text">
+          <h3>Explainable AI (XAI) Risk Decomposition</h3>
+          <p>Mathematical feature attribution and SHAP weighting for multi-hazard risk synthesis (0–100 score)</p>
+        </div>
+      </div>
+
+      <div class="section-controls">
+        <span class="badge-tech" style="border-color:var(--accent-purple); color:var(--accent-purple);">SHAP VALUE FORMULATION</span>
+      </div>
+    </div>
+
+    <!-- Hazard switcher buttons -->
+    <div class="xai-hazard-tabs">
+      <button class="xai-tab-btn active" onclick="switchXAIHazard('flood')">🌊 Flood & Inundation</button>
+      <button class="xai-tab-btn" onclick="switchXAIHazard('earthquake')">⚡ Seismic & Fault Rupture</button>
+      <button class="xai-tab-btn" onclick="switchXAIHazard('cyclone')">🌀 Tropical Cyclone</button>
+      <button class="xai-tab-btn" onclick="switchXAIHazard('landslide')">⛰️ Hillside Landslide</button>
+      <button class="xai-tab-btn" onclick="switchXAIHazard('heatwave')">☀️ Extreme Heatwave</button>
+    </div>
+
+    <div class="xai-top-row">
+      <div class="xai-score-donut-box">
+        <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Composite Risk Index</div>
+        <div class="xai-gauge-val" id="xai-composite-val">82</div>
+        <div style="font-size:12px; font-weight:800; color:var(--accent-red);" id="xai-threat-label">CRITICAL VULNERABILITY</div>
+        <div style="font-size:11px; color:var(--text-dim); margin-top:8px;">Model: PINN-Ensemble v4.2<br>Confidence: 95.4%</div>
+      </div>
+
+      <div class="xai-factors-list" id="xai-factors-container">
+        <!-- 6 Factor Bars will be rendered here dynamically -->
+      </div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:12px 16px; font-size:11.5px; color:var(--text-muted); line-height:1.5;">
+      💡 <b style="color:#fff;">Explainability Note:</b> Risk calculation implements an additive SHAP framework: 
+      <code>Risk = Σ (Weight_i × RawScore_i) + InteractionCorrection(Rain, Soil, River)</code>. 
+      Under current atmospheric conditions, rainfall accumulation and saturated soil cohesion account for 45% of total catastrophic inundation probability.
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 5: WHAT-IF DISASTER SIMULATION
+       ===================================================================== -->
+  <section class="section-card" id="sec-whatif">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">05</div>
+        <div class="section-title-text">
+          <h3>What-If Disaster Cascade Simulation Engine</h3>
+          <p>Parametric stress-testing: simulate magnitude, precipitation, wind velocity & duration domino effects</p>
+        </div>
+      </div>
+
+      <div class="section-controls">
+        <button class="btn-action red" onclick="runWhatIfSimulation()">
+          ⚡ <span>Execute Simulation Run</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="whatif-grid">
+      <!-- Controls Column -->
+      <div class="whatif-controls">
+        <h4 style="font-size:13px; font-weight:800; color:#fff; margin-bottom:14px; text-transform:uppercase; letter-spacing:0.5px;">
+          🎛️ Simulation Parameters
+        </h4>
+
+        <!-- Hazard & Location Dropdowns -->
+        <div class="whatif-select-row">
+          <div class="custom-select-box">
+            <label>Hazard Type</label>
+            <select id="sim-hazard-type" class="tactical-select" onchange="runWhatIfSimulation()">
+              <option value="FLOOD">🌊 Urban / River Flood</option>
+              <option value="EARTHQUAKE">⚡ Seismic Rupture</option>
+              <option value="CYCLONE">🌀 Severe Cyclonic Storm</option>
+              <option value="LANDSLIDE">⛰️ Debris Flow / Landslide</option>
+              <option value="CLOUDBURST">⛈️ Mountain Cloudburst</option>
+            </select>
+          </div>
+
+          <div class="custom-select-box">
+            <label>Target Epicenter</label>
+            <select id="sim-location" class="tactical-select" onchange="runWhatIfSimulation()">
+              <option value="Pune">Pune & Mula Basin</option>
+              <option value="Mumbai">Mumbai MMR & Mithi</option>
+              <option value="Koyna">Satara / Koyna Fault</option>
+              <option value="Kolhapur">Kolhapur & Panchganga</option>
+              <option value="Raigad">Raigad / Mahad Ghats</option>
+              <option value="Nagpur">Nagpur & Vidarbha</option>
+              <option value="Nashik">Nashik & Godavari Upper</option>
+              <option value="Ratnagiri">Ratnagiri Konkan Coast</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="whatif-select-row">
+          <div class="custom-select-box">
+            <label>Time of Day</label>
+            <select id="sim-time" class="tactical-select" onchange="runWhatIfSimulation()">
+              <option value="MIDNIGHT">🌙 Midnight (02:30 AM)</option>
+              <option value="MORNING_RUSH">🚗 Morning Rush (08:30 AM)</option>
+              <option value="MIDDAY">☀️ Midday (02:00 PM)</option>
+              <option value="EVENING_RUSH">🌆 Evening Rush (06:30 PM)</option>
+            </select>
+          </div>
+
+          <div class="custom-select-box">
+            <label>Seasonal Climate</label>
+            <select id="sim-season" class="tactical-select" onchange="runWhatIfSimulation()">
+              <option value="MONSOON">🌧️ Active SW Monsoon</option>
+              <option value="CYCLONIC">🌀 Pre-Monsoon Cyclonic</option>
+              <option value="WINTER">❄️ Post-Monsoon / Winter</option>
+              <option value="SUMMER">🔥 Pre-Monsoon Heatwave</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Sliders -->
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Seismic Magnitude (M)</label>
+            <span class="slider-val-tag" id="val-mag">6.8 M</span>
+          </div>
+          <input type="range" class="slider-control" id="slider-mag" min="4.0" max="9.0" step="0.1" value="6.8" oninput="updateSliderVal('mag', this.value, ' M'); runWhatIfSimulation();">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Rainfall Intensity (24h)</label>
+            <span class="slider-val-tag" id="val-rain">240 mm</span>
+          </div>
+          <input type="range" class="slider-control" id="slider-rain" min="0" max="500" step="5" value="240" oninput="updateSliderVal('rain', this.value, ' mm'); runWhatIfSimulation();">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Sustained Wind Speed</label>
+            <span class="slider-val-tag" id="val-wind">115 km/h</span>
+          </div>
+          <input type="range" class="slider-control" id="slider-wind" min="0" max="250" step="5" value="115" oninput="updateSliderVal('wind', this.value, ' km/h'); runWhatIfSimulation();">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Event Duration Window</label>
+            <span class="slider-val-tag" id="val-dur">18 hrs</span>
+          </div>
+          <input type="range" class="slider-control" id="slider-dur" min="1" max="72" step="1" value="18" oninput="updateSliderVal('dur', this.value, ' hrs'); runWhatIfSimulation();">
+        </div>
+      </div>
+
+      <!-- Results Column -->
+      <div class="whatif-results-board">
+        <!-- Impact KPI Grid -->
+        <div class="impact-kpi-grid">
+          <div class="impact-kpi-card">
+            <div class="kpi-label">Population Affected</div>
+            <div class="kpi-number" id="sim-res-pop" style="color:var(--accent-red);">485,000</div>
+            <div class="kpi-foot">Directly exposed persons</div>
+          </div>
+
+          <div class="impact-kpi-card">
+            <div class="kpi-label">Economic Loss Est.</div>
+            <div class="kpi-number" id="sim-res-loss" style="color:var(--accent-amber);">₹ 1,840 Cr</div>
+            <div class="kpi-foot">Infrastructure & agricultural</div>
+          </div>
+
+          <div class="impact-kpi-card">
+            <div class="kpi-label">NDRF Teams Required</div>
+            <div class="kpi-number" id="sim-res-ndrf" style="color:var(--accent-cyan);">14 Teams</div>
+            <div class="kpi-foot">USAR + Deep Diving units</div>
+          </div>
+
+          <div class="impact-kpi-card">
+            <div class="kpi-label">Relief Camps Needed</div>
+            <div class="kpi-number" id="sim-res-camps" style="color:var(--accent-green);">42 Camps</div>
+            <div class="kpi-foot">Cap: 15,000 beds/shelters</div>
+          </div>
+        </div>
+
+        <!-- Cascade Domino Stages Visualizer -->
+        <div class="cascade-timeline-box">
+          <h4 style="font-size:13px; font-weight:800; color:#fff; margin-bottom:12px; display:flex; justify-content:space-between;">
+            <span>⛓️ Dynamic Cascade & Domino Failure Chain</span>
+            <span style="font-size:11px; color:var(--accent-cyan);" id="sim-cascade-lead">Lead Time to Catastrophe: 6.2 hrs</span>
+          </h4>
+
+          <div class="cascade-stage-row">
+            <div class="stage-bullet" style="border-color:var(--accent-red); color:var(--accent-red);">1</div>
+            <div class="stage-text">
+              <h5 id="cascade-stage1-title">Stage 1: Primary Trigger Inundation</h5>
+              <p id="cascade-stage1-desc">Severe catchment precipitation causes rapid water level rise. Sluice gate discharge reaches threshold capacity.</p>
+            </div>
+          </div>
+
+          <div class="cascade-stage-row">
+            <div class="stage-bullet" style="border-color:var(--accent-orange); color:var(--accent-orange);">2</div>
+            <div class="stage-text">
+              <h5 id="cascade-stage2-title">Stage 2: Secondary Hillside & Embankment Weakening</h5>
+              <p id="cascade-stage2-desc">Pore pressure saturation induces micro-slips along NH-48 and adjacent railway embankments.</p>
+            </div>
+          </div>
+
+          <div class="cascade-stage-row">
+            <div class="stage-bullet" style="border-color:var(--accent-amber); color:var(--accent-amber);">3</div>
+            <div class="stage-text">
+              <h5 id="cascade-stage3-title">Stage 3: Critical Grid & Substation Submersion</h5>
+              <p id="cascade-stage3-desc">Urban 220kV distribution substations inundated; automated safety tripping cuts emergency backup power.</p>
+            </div>
+          </div>
+
+          <div class="cascade-stage-row">
+            <div class="stage-bullet" style="border-color:var(--accent-purple); color:var(--accent-purple);">4</div>
+            <div class="stage-text">
+              <h5 id="cascade-stage4-title">Stage 4: Logistics & Corridor Strangulation</h5>
+              <p id="cascade-stage4-desc">Key river bridges closed due to high hydrodynamic water velocity; relief convoys re-routed via bypass rings.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini Simulation Impact Chart -->
+        <div style="background:rgba(5, 11, 26, 0.6); border:1px solid rgba(255, 255, 255, 0.08); border-radius:12px; padding:16px;">
+          <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">
+            Resource Mobilization Curves (Projected vs Demanded)
+          </div>
+          <div style="height:150px; position:relative;">
+            <canvas id="simImpactChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 6: HISTORICAL DISASTER PATTERN ANALYSIS
+       ===================================================================== -->
+  <section class="section-card" id="sec-historical">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">06</div>
+        <div class="section-title-text">
+          <h3>Historical Disaster Pattern Analysis (2016–2026)</h3>
+          <p>Decadal multi-hazard incidence trends, frequency distributions, and seasonality calendar heatmap</p>
+        </div>
+      </div>
+
+      <div class="section-controls">
+        <select id="hist-year-select" class="tactical-select" onchange="loadHistoricalPatterns(this.value)">
+          <option value="2026">2026 (Current Active Year)</option>
+          <option value="2025">2025 Retrospective</option>
+          <option value="2024">2024 Retrospective</option>
+          <option value="2021">2021 Severe Flood Year</option>
+          <option value="2019">2019 Kolhapur/Sangli Deluge</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="history-grid-2">
+      <!-- 10-Year Trend Chart -->
+      <div style="background:rgba(5, 11, 26, 0.7); border:1px solid rgba(255, 255, 255, 0.08); border-radius:14px; padding:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h4 style="font-size:13px; font-weight:800; color:#fff;">10-Year Multi-Hazard Frequency Distribution</h4>
+          <span style="font-size:11px; color:var(--accent-cyan);">+14.2% YoY Extreme Event Trend</span>
+        </div>
+        <div style="height:280px; position:relative;">
+          <canvas id="historicalTrendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Calendar Frequency Heatmap -->
+      <div style="background:rgba(5, 11, 26, 0.7); border:1px solid rgba(255, 255, 255, 0.08); border-radius:14px; padding:18px;">
+        <h4 style="font-size:13px; font-weight:800; color:#fff; margin-bottom:6px;">Seasonality Heatmap (<span id="heatmap-year-label">2026</span>)</h4>
+        <p style="font-size:11px; color:var(--text-muted); margin-bottom:14px;">Color intensity represents total documented disaster occurrences by month.</p>
+
+        <div class="heatmap-calendar" id="heatmap-calendar-grid">
+          <!-- 12 months dynamically populated -->
+        </div>
+
+        <div style="margin-top:20px; font-size:11.5px; color:var(--text-muted); line-height:1.45; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
+          📌 <b>Monsoon Concentration:</b> Over 68% of historical landslides and 74% of severe river flash floods in Western India occur in July–August.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 7: PREDICTIVE RISK COMPARISON (ALL 36 DISTRICTS)
+       ===================================================================== -->
+  <section class="section-card" id="sec-districts">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">07</div>
+        <div class="section-title-text">
+          <h3>Predictive District Multi-Hazard Profile & Radar Comparison</h3>
+          <p>Full 36-District Maharashtra multi-threat vulnerability spectrum and comparative cross-analysis</p>
+        </div>
+      </div>
+
+      <div class="section-controls">
+        <label style="font-size:11px; color:var(--text-muted); font-weight:700;">Select District:</label>
+        <select id="district-select-a" class="tactical-select" onchange="updateDistrictAnalysis()" style="font-weight:700; color:var(--accent-cyan); border-color:var(--accent-cyan);">
+          <!-- All 36 Maharashtra Districts will be injected here -->
+        </select>
+      </div>
+    </div>
+
+    <div class="district-comp-grid">
+      <!-- District Info Card A -->
+      <div class="district-info-card" id="district-card-a">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+          <div>
+            <h4 style="font-size:18px; font-weight:900; color:#fff;" id="da-name">Pune District</h4>
+            <span style="font-size:11px; color:var(--text-muted);" id="da-region">Western Maharashtra / Desh</span>
+          </div>
+          <span class="badge-tech" id="da-composite-badge" style="border-color:var(--accent-red); color:var(--accent-red);">RISK: 82/100</span>
+        </div>
+
+        <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:10px;">
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Major River Basin</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:#fff;" id="da-basin">Bhima / Mula-Mutha</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Seismic Hazard Zone</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:var(--accent-amber);" id="da-seismic">Zone III (Moderate)</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Population Density</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:#fff;" id="da-density">603 / km²</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Key Landslide Corridor</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:#fff;" id="da-landslide-zone">Western Ghats / Bhor</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Relief Shelter Capacity</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:var(--accent-green);" id="da-shelter-cap">84,500 Beds</td>
+          </tr>
+        </table>
+
+        <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); font-size:11px; color:var(--text-muted);">
+          <b>Strategic Note:</b> <span id="da-note">High urban runoff vulnerability due to heavy paving in Pune-Pimpri twin municipal jurisdiction.</span>
+        </div>
+      </div>
+
+      <!-- Center Radar Chart -->
+      <div class="district-radar-wrap district-comp-center">
+        <h4 style="font-size:13px; font-weight:800; color:#fff; margin-bottom:12px;">Multi-Hazard Vulnerability Radar Spectrum</h4>
+        <div style="position:relative; height:320px; width:100%;">
+          <canvas id="districtRadarChart"></canvas>
+        </div>
+      </div>
+
+      <!-- District Comparative Selector B -->
+      <div class="district-info-card" id="district-card-b">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h4 style="font-size:14px; font-weight:800; color:#fff;">Benchmark Comparison</h4>
+          <select id="district-select-b" class="tactical-select" onchange="updateDistrictAnalysis()" style="font-size:11px;">
+            <!-- District B choices -->
+          </select>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+          <div>
+            <h4 style="font-size:18px; font-weight:900; color:#fff;" id="db-name">Kolhapur District</h4>
+            <span style="font-size:11px; color:var(--text-muted);" id="db-region">South Maharashtra</span>
+          </div>
+          <span class="badge-tech" id="db-composite-badge" style="border-color:var(--accent-red); color:var(--accent-red);">RISK: 89/100</span>
+        </div>
+
+        <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:10px;">
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Major River Basin</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:#fff;" id="db-basin">Panchganga / Krishna</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Seismic Hazard Zone</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:var(--accent-amber);" id="db-seismic">Zone III / IV Koyna</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Population Density</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:#fff;" id="db-density">504 / km²</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Key Landslide Corridor</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:#fff;" id="db-landslide-zone">Gaganbawda / Radhanagari</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; color:var(--text-muted);">Relief Shelter Capacity</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:var(--accent-green);" id="db-shelter-cap">62,000 Beds</td>
+          </tr>
+        </table>
+
+        <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); font-size:11px; color:var(--text-muted);">
+          <b>Strategic Note:</b> <span id="db-note">Almatti dam backwater effect significantly compounds Panchganga river discharge latency.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 8: AI DECISION SUPPORT & INTERACTIVE DECISION TREE
+       ===================================================================== -->
+  <section class="section-card" id="sec-decisiontree">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">08</div>
+        <div class="section-title-text">
+          <h3>AI Tactical Decision Support & Action Flow Tree</h3>
+          <p>Interactive situational flow charts with branch conditions, automated interlocks, and SOP compliance</p>
+        </div>
+      </div>
+
+      <div class="section-controls">
+        <select id="dt-scenario-select" class="tactical-select" onchange="renderDecisionTree(this.value)">
+          <option value="FLOOD">🌊 Flood River Inundation Protocol</option>
+          <option value="SEISMIC">⚡ High Magnitude Seismic Trigger</option>
+          <option value="CYCLONE">🌀 Severe Cyclone Coastal Landfall</option>
+          <option value="LANDSLIDE">⛰️ Landslide Highway Cut Off</option>
+        </select>
+
+        <button class="btn-action green" onclick="exportDecisionTreePDF()">
+          📄 <span>Export Decision Tree (PDF)</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="dt-tree-container">
+      <div class="dt-tree-flow" id="dt-tree-render">
+        <!-- Rendered Decision Tree Nodes -->
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 9: 4-DAY WEATHER FORECAST
+       ===================================================================== -->
+  <section class="section-card" id="sec-forecast">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">09</div>
+        <div class="section-title-text">
+          <h3>4-Day High-Resolution Meteorological Forecast</h3>
+          <p>Numerical Weather Prediction (NWP) ensemble projection & day-by-day hazard risk level</p>
+        </div>
+      </div>
+
+      <div class="section-controls">
+        <button class="btn-action" onclick="fetch4DayForecast()">
+          🔄 <span>Refresh NWP Telemetry</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4 Day Cards Grid -->
+    <div class="forecast-cards-grid" id="forecast-cards-container">
+      <!-- 4 Days injected dynamically -->
+    </div>
+
+    <!-- Mini Rainfall Hourly projection strip -->
+    <div style="background:rgba(5, 11, 26, 0.65); border:1px solid rgba(255, 255, 255, 0.08); border-radius:12px; padding:16px; margin-top:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-size:11.5px; font-weight:700; color:#fff; text-transform:uppercase;">96-Hour Accumulated Precipitation Trend (mm)</span>
+        <span style="font-size:11px; color:var(--accent-cyan);">Integrated IMD GFS + ECMWF Model</span>
+      </div>
+      <div style="height:140px; position:relative;">
+        <canvas id="forecastPrecipChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SECTION 10: PREDICTION CONFIDENCE DASHBOARD
+       ===================================================================== -->
+  <section class="section-card" id="sec-confidence">
+    <div class="section-card-header">
+      <div class="title-group">
+        <div class="section-badge-num">10</div>
+        <div class="section-title-text">
+          <h3>Prediction Confidence & Model Reliability Dashboard</h3>
+          <p>Ensemble architecture validation, Bayesian uncertainty quantification, and sensor telemetry health</p>
+        </div>
+      </div>
+
+      <div class="section-controls">
+        <span class="badge-tech" style="border-color:var(--accent-green); color:var(--accent-green);">SYSTEM RELIABILITY: 98.9%</span>
+      </div>
+    </div>
+
+    <!-- 5 Confidence Gauges -->
+    <div class="conf-gauges-grid">
+      <div class="conf-gauge-card">
+        <div class="conf-gauge-chart-wrap">
+          <canvas id="gaugeFlood"></canvas>
+          <div class="conf-gauge-center-text" id="gauge-flood-val">94.2%</div>
+        </div>
+        <div class="conf-hazard-title">🌊 Flood Inundation</div>
+        <div style="font-size:10px; color:var(--accent-green); margin-top:3px;">● High Confidence</div>
+      </div>
+
+      <div class="conf-gauge-card">
+        <div class="conf-gauge-chart-wrap">
+          <canvas id="gaugeSeismic"></canvas>
+          <div class="conf-gauge-center-text" id="gauge-seismic-val">88.5%</div>
+        </div>
+        <div class="conf-hazard-title">⚡ Seismic Rupture</div>
+        <div style="font-size:10px; color:var(--accent-cyan); margin-top:3px;">● Reliable</div>
+      </div>
+
+      <div class="conf-gauge-card">
+        <div class="conf-gauge-chart-wrap">
+          <canvas id="gaugeCyclone"></canvas>
+          <div class="conf-gauge-center-text" id="gauge-cyclone-val">96.1%</div>
+        </div>
+        <div class="conf-hazard-title">🌀 Cyclone Track</div>
+        <div style="font-size:10px; color:var(--accent-green); margin-top:3px;">● Very High</div>
+      </div>
+
+      <div class="conf-gauge-card">
+        <div class="conf-gauge-chart-wrap">
+          <canvas id="gaugeLandslide"></canvas>
+          <div class="conf-gauge-center-text" id="gauge-landslide-val">82.4%</div>
+        </div>
+        <div class="conf-hazard-title">⛰️ Landslide Slip</div>
+        <div style="font-size:10px; color:var(--accent-amber); margin-top:3px;">● Moderate</div>
+      </div>
+
+      <div class="conf-gauge-card">
+        <div class="conf-gauge-chart-wrap">
+          <canvas id="gaugeHeatwave"></canvas>
+          <div class="conf-gauge-center-text" id="gauge-heatwave-val">91.0%</div>
+        </div>
+        <div class="conf-hazard-title">☀️ Heatwave Trend</div>
+        <div style="font-size:10px; color:var(--accent-green); margin-top:3px;">● High Confidence</div>
+      </div>
+    </div>
+
+    <!-- Ensemble Weights & Data Quality -->
+    <div class="conf-bottom-grid">
+      <!-- Ensemble Model Weights Breakdown -->
+      <div style="background:rgba(5, 11, 26, 0.7); border:1px solid rgba(255, 255, 255, 0.08); border-radius:14px; padding:18px;">
+        <h4 style="font-size:13px; font-weight:800; color:#fff; margin-bottom:12px;">Ensemble Architecture Weight Composition</h4>
+        <div style="display:grid; grid-template-columns:140px 1fr; gap:16px; align-items:center;">
+          <div style="width:130px; height:130px; margin:0 auto; position:relative;">
+            <canvas id="ensembleDonutChart"></canvas>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px; font-size:11.5px;">
+            <div style="display:flex; justify-content:space-between;"><span style="color:#00bfff;">■ Temporal LSTM-GRU Neural Net</span> <b>35%</b></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#00e676;">■ Physics-Informed PINN Engine</span> <b>25%</b></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#ffd700;">■ Numerical NWP Ensemble (GFS)</span> <b>20%</b></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#ff9100;">■ Historical Random Forest Model</span> <b>12%</b></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#b388ff;">■ Copernicus SAR Feature Layer</span> <b>8%</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry Health Indicators -->
+      <div style="background:rgba(5, 11, 26, 0.7); border:1px solid rgba(255, 255, 255, 0.08); border-radius:14px; padding:18px;">
+        <h4 style="font-size:13px; font-weight:800; color:#fff; margin-bottom:12px;">Data Ingestion Quality & Telemetry Health</h4>
+        <table class="telemetry-health-table">
+          <tr>
+            <td>Ground Seismometer / Buoy Array Uptime</td>
+            <td style="color:var(--accent-green);">99.82% Operational</td>
+          </tr>
+          <tr>
+            <td>Satellite Synthetic Aperture Revisit Latency</td>
+            <td style="color:var(--accent-cyan);">14 Minutes (ISRO/ESA)</td>
+          </tr>
+          <tr>
+            <td>Sensor Calibration Drift Error</td>
+            <td style="color:var(--accent-green);">&lt; 0.038% (Nominal)</td>
+          </tr>
+          <tr>
+            <td>Missing Telemetry Packet Rate</td>
+            <td style="color:var(--accent-green);">0.14% (Packet FEC Armed)</td>
+          </tr>
+          <tr>
+            <td>Spatial Resolution Density Rating</td>
+            <td style="color:var(--accent-cyan);">Level 4 Tactical High (10m)</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- =====================================================================
+     TACTICAL JAVASCRIPT LOGIC & STATE ENGINE
+     ===================================================================== -->
+<script>
+/* =====================================================================
+   GLOBAL STATE & CONSTANTS
+   ===================================================================== */
+const APP_STATE = {
+  language: 'en',
+  sitrepCountdown: 300, // 5 minutes in seconds
+  timerInterval: null,
+  activeHazard: 'flood',
+  districtA: 'Pune',
+  districtB: 'Kolhapur'
+};
+
+// 36 Maharashtra Districts complete database
+const MAHARASHTRA_DISTRICTS = [
+  { name: "Ahmednagar", region: "North Maharashtra", basin: "Godavari / Pravara", seismic: "Zone III", density: 266, landslide: "Akole / Harishchandragad", shelter: 45000, risk: 62, flood: 58, eq: 45, cyclone: 25, ls: 60, drought: 78, heat: 75, note: "Rain shadow drought vulnerability with intermittent Pravara river flash floods." },
+  { name: "Akola", region: "Vidarbha", basin: "Purna River", seismic: "Zone II", density: 321, landslide: "Low / Plain", shelter: 38000, risk: 68, flood: 65, eq: 28, cyclone: 15, ls: 10, drought: 82, heat: 94, note: "Intense summer heatwave corridor; Purna river flash flooding during cloudbursts." },
+  { name: "Amravati", region: "Vidarbha", basin: "Wardha / Tapi", seismic: "Zone II", density: 237, landslide: "Melghat Hills", shelter: 42000, risk: 66, flood: 60, eq: 30, cyclone: 18, ls: 55, drought: 75, heat: 92, note: "Melghat tribal hill tract susceptible to monsoon debris flows and isolation." },
+  { name: "Chhatrapati Sambhaji Nagar", region: "Marathwada", basin: "Godavari", seismic: "Zone III", density: 365, landslide: "Ajanta Range", shelter: 54000, risk: 64, flood: 62, eq: 42, cyclone: 20, ls: 45, drought: 84, heat: 88, note: "Godavari basin tributary inundation risk; high agricultural drought sensitivity." },
+  { name: "Beed", region: "Marathwada", basin: "Godavari / Bindusara", seismic: "Zone III", density: 242, landslide: "Balaghat Plateau", shelter: 32000, risk: 71, flood: 55, eq: 44, cyclone: 15, ls: 30, drought: 95, heat: 90, note: "Persistent severe drought belt combined with Bindusara urban river overflowing." },
+  { name: "Bhandara", region: "Vidarbha", basin: "Wainganga", seismic: "Zone II", density: 293, landslide: "Low / Lowland", shelter: 34000, risk: 76, flood: 88, eq: 22, cyclone: 25, ls: 15, drought: 40, heat: 89, note: "Wainganga river backwater creates recurring severe monsoon submergence." },
+  { name: "Buldhana", region: "Vidarbha", basin: "Penganga / Purna", seismic: "Zone II", density: 268, landslide: "Ajanta Scarps", shelter: 36000, risk: 59, flood: 52, eq: 32, cyclone: 18, ls: 40, drought: 80, heat: 86, note: "Lonar crater geological sensitivity and Penganga headwaters runoff." },
+  { name: "Chandrapur", region: "Vidarbha", basin: "Wardha / Erai", seismic: "Zone II", density: 192, landslide: "Low / Forested", shelter: 48000, risk: 78, flood: 84, eq: 25, cyclone: 22, ls: 12, drought: 50, heat: 98, note: "Extreme summer heatwave (>47°C) combined with severe Erai river industrial flood cuts." },
+  { name: "Dhule", region: "Khandesh", basin: "Tapi / Panzara", seismic: "Zone III", density: 285, landslide: "Galna Hills", shelter: 35000, risk: 61, flood: 68, eq: 38, cyclone: 20, ls: 35, drought: 72, heat: 88, note: "Panzara river urban flash floods affecting Dhule municipal zones." },
+  { name: "Gadchiroli", region: "Vidarbha", basin: "Pranhita / Godavari", seismic: "Zone II", density: 74, landslide: "Bhamragad Hills", shelter: 30000, risk: 84, flood: 94, eq: 20, cyclone: 28, ls: 45, drought: 35, heat: 87, note: "Over 80 villages cut off annually due to Godavari-Pranhita river confluence backwaters." },
+  { name: "Gondia", region: "Vidarbha", basin: "Wainganga / Bagh", seismic: "Zone II", density: 253, landslide: "Navegaon Hills", shelter: 31000, risk: 77, flood: 86, eq: 24, cyclone: 22, ls: 25, drought: 38, heat: 88, note: "Bagh and Shirpur dam discharges cause rapid agricultural tract inundation." },
+  { name: "Hingoli", region: "Marathwada", basin: "Kayadhu River", seismic: "Zone II", density: 244, landslide: "Hingoli Hills", shelter: 26000, risk: 63, flood: 72, eq: 30, cyclone: 16, ls: 22, drought: 79, heat: 85, note: "Kayadhu river flash floods breach district connectivity frequently." },
+  { name: "Jalgaon", region: "Khandesh", basin: "Tapi / Girna", seismic: "Zone III", density: 359, landslide: "Satpura Foothills", shelter: 52000, risk: 65, flood: 74, eq: 40, cyclone: 22, ls: 38, drought: 70, heat: 91, note: "Hathnur dam high outflow triggers low-lying Tapi river basin submergence." },
+  { name: "Jalna", region: "Marathwada", basin: "Kundalika / Godavari", seismic: "Zone III", density: 255, landslide: "Low Plateaus", shelter: 29000, risk: 65, flood: 60, eq: 38, cyclone: 18, ls: 20, drought: 88, heat: 87, note: "High agricultural drought risk with occasional Kundalika river surges." },
+  { name: "Kolhapur", region: "South Maharashtra", basin: "Panchganga / Krishna", seismic: "Zone III/IV", density: 504, landslide: "Gaganbawda / Radhanagari", shelter: 62000, risk: 89, flood: 96, eq: 65, cyclone: 45, ls: 82, drought: 22, heat: 68, note: "Critical flood corridor; Almatti dam backwater creates severe Panchganga inundation." },
+  { name: "Latur", region: "Marathwada", basin: "Manjara River", seismic: "Zone IV (Killari)", density: 343, landslide: "Balaghat Escarpment", shelter: 44000, risk: 75, flood: 55, eq: 88, cyclone: 15, ls: 25, drought: 90, heat: 89, note: "Epicenter of 1993 seismic event; elevated intra-plate tectonic sensitivity." },
+  { name: "Mumbai City", region: "Konkan", basin: "Coastal / Mithi River", seismic: "Zone III", density: 19652, landslide: "Antop Hill / Malabar", shelter: 110000, risk: 87, flood: 95, eq: 52, cyclone: 88, ls: 40, drought: 5, heat: 74, note: "Extremely dense coastal island city; storm surge & extreme tidal waterlogging." },
+  { name: "Mumbai Suburban", region: "Konkan", basin: "Mithi / Poisar / Dahisar", seismic: "Zone III", density: 20980, landslide: "Ghatkopar / Kurla Hills", shelter: 145000, risk: 91, flood: 98, eq: 54, cyclone: 89, ls: 75, drought: 5, heat: 76, note: "Highest population density; Mithi river choke points and informal hill slope settlements." },
+  { name: "Nagpur", region: "Vidarbha", basin: "Nag / Pili / Kanhan", seismic: "Zone II", density: 470, landslide: "Low / Rolling", shelter: 78000, risk: 73, flood: 79, eq: 30, cyclone: 20, ls: 10, drought: 60, heat: 97, note: "Urban flash floods in Nag/Pili rivers; summer heatwave records reaching 48°C." },
+  { name: "Nanded", region: "Marathwada", basin: "Godavari", seismic: "Zone II/III", density: 319, landslide: "Mahur Hills", shelter: 45000, risk: 72, flood: 85, eq: 46, cyclone: 22, ls: 30, drought: 78, heat: 88, note: "Vishnupuri barrage backwater inundation along Godavari river banks." },
+  { name: "Nandurbar", region: "Khandesh", basin: "Narmada / Tapi", seismic: "Zone III", density: 276, landslide: "Toranmal / Satpura", shelter: 32000, risk: 69, flood: 72, eq: 42, cyclone: 24, ls: 74, drought: 58, heat: 85, note: "Rugged Satpura terrain with high tribal isolation during monsoon landslides." },
+  { name: "Nashik", region: "North Maharashtra", basin: "Godavari Upper", seismic: "Zone III", density: 393, landslide: "Igatpuri / Trimbak", shelter: 68000, risk: 74, flood: 83, eq: 50, cyclone: 35, ls: 80, drought: 62, heat: 78, note: "Gangapur dam discharge floods Godavari Ramkund; Igatpuri ghats prone to rockfalls." },
+  { name: "Dharashiv", region: "Marathwada", basin: "Terna / Sina", seismic: "Zone IV (Killari)", density: 219, landslide: "Yedshi Ghats", shelter: 28000, risk: 70, flood: 58, eq: 84, cyclone: 15, ls: 35, drought: 92, heat: 86, note: "Killari seismic fault proximity combined with recurrent seasonal drought." },
+  { name: "Palghar", region: "Konkan", basin: "Vaitarna / Surya", seismic: "Zone III/IV", density: 562, landslide: "Jawhar / Mokhada", shelter: 52000, risk: 83, flood: 86, eq: 76, cyclone: 82, ls: 72, drought: 15, heat: 75, note: "Dahanu swarm earthquakes, coastal cyclonic storm surges, and Surya river inundation." },
+  { name: "Parbhani", region: "Marathwada", basin: "Godavari / Dudhna", seismic: "Zone II", density: 295, landslide: "Low Plains", shelter: 30000, risk: 66, flood: 70, eq: 32, cyclone: 16, ls: 18, drought: 85, heat: 89, note: "Yeldari dam discharge impacts lower Dudhna and Godavari flood plains." },
+  { name: "Pune", region: "Western Maharashtra", basin: "Bhima / Mula-Mutha", seismic: "Zone III", density: 603, landslide: "Bhor / Lonavala Ghats", shelter: 84500, risk: 82, flood: 88, eq: 55, cyclone: 40, ls: 78, drought: 48, heat: 74, note: "High urban runoff vulnerability due to heavy paving in Pune-Pimpri municipal corridors." },
+  { name: "Raigad", region: "Konkan", basin: "Savitri / Kundalika", seismic: "Zone III/IV", density: 368, landslide: "Mahad / Taliye Ghats", shelter: 58000, risk: 90, flood: 94, eq: 64, cyclone: 86, ls: 96, drought: 10, heat: 72, note: "Severe landslide devastation history (Taliye); Savitri river tidal bore flooding." },
+  { name: "Ratnagiri", region: "Konkan", basin: "Vashishti / Shastri", seismic: "Zone III/IV", density: 196, landslide: "Chiplun / Tiware Dam", shelter: 46000, risk: 88, flood: 95, eq: 68, cyclone: 85, ls: 90, drought: 10, heat: 70, note: "Chiplun bowl topography trapped by Vashishti river flash floods and high tides." },
+  { name: "Sangli", region: "South Maharashtra", basin: "Krishna / Warna", seismic: "Zone III/IV", density: 329, landslide: "Shirala / Chandoli", shelter: 55000, risk: 85, flood: 94, eq: 66, cyclone: 38, ls: 68, drought: 60, heat: 78, note: "Krishna-Warna river confluence floods Irwin Bridge; Koyna dam discharges directly impact." },
+  { name: "Satara", region: "Western Maharashtra", basin: "Krishna / Koyna", seismic: "Zone IV (Koyna)", density: 287, landslide: "Mahabaleshwar / Patan", shelter: 51000, risk: 86, flood: 89, eq: 92, cyclone: 36, ls: 92, drought: 52, heat: 72, note: "Koyna reservoir-triggered seismicity combined with torrential Sahyadri downpours." },
+  { name: "Sindhudurg", region: "Konkan", basin: "Terekhol / Karli", seismic: "Zone III", density: 163, landslide: "Amboli Ghats", shelter: 38000, risk: 79, flood: 80, eq: 52, cyclone: 84, ls: 85, drought: 8, heat: 68, note: "Highest rainfall zone in Maharashtra (Amboli); coastal tidal surges & ghat slips." },
+  { name: "Solapur", region: "Marathwada/Desh", basin: "Bhima / Sina", seismic: "Zone III", density: 290, landslide: "Low Rolling", shelter: 49000, risk: 69, flood: 74, eq: 46, cyclone: 20, ls: 15, drought: 94, heat: 92, note: "Ujani dam huge discharge inundates lower Bhima river; high chronic drought." },
+  { name: "Thane", region: "Konkan", basin: "Ulhas / Kalu", seismic: "Zone III", density: 1157, landslide: "Malshej / Yeoor", shelter: 92000, risk: 86, flood: 92, eq: 58, cyclone: 82, ls: 75, drought: 8, heat: 75, note: "Ulhas river overflow paralyzes Central Railway trunk line and urban centers." },
+  { name: "Wardha", region: "Vidarbha", basin: "Wardha / Yashoda", seismic: "Zone II", density: 205, landslide: "Low Rolling", shelter: 31000, risk: 67, flood: 72, eq: 26, cyclone: 18, ls: 12, drought: 65, heat: 94, note: "Lower Wardha dam backwater floods agricultural tracts; severe heatwave belt." },
+  { name: "Washim", region: "Vidarbha", basin: "Penganga", seismic: "Zone II", density: 244, landslide: "Washim Plateaus", shelter: 27000, risk: 61, flood: 65, eq: 28, cyclone: 15, ls: 18, drought: 78, heat: 89, note: "Penganga river seasonal flash floods and groundwater deficit." },
+  { name: "Yavatmal", region: "Vidarbha", basin: "Wardha / Painganga", seismic: "Zone II", density: 204, landslide: "Pusad Hills", shelter: 39000, risk: 70, flood: 75, eq: 28, cyclone: 16, ls: 25, drought: 85, heat: 93, note: "Isapur dam outflow triggers sudden Painganga overflows; high agrarian vulnerability." }
+];
+
+// 10 AI Tactical Recommendations Data
+const RECOMMENDATIONS_DB = [
+  { rank: 1, type: "EVACUATE", priority: "P1", sop: "NDMA-SOP-FLD-01", title: "Order Immediate Tier-1 Inundation Evacuation in Lowland Sectors", desc: "Sluice gate discharge at Koyna and Khadakwasla dams will elevate river gauge past danger level (+2.4m) within 5 hours. Evacuate riverbank settlements to pre-designated schools.", area: "Kolhapur (Panchganga) & Sangli (Irwin Bridge)", timeline: "Immediate (0–2 Hours)", confidence: 96.5, resources: "NDRF 2 Battalions, 40 Inflatable Dinghies, 12 Relief Centers" },
+  { rank: 2, type: "DEPLOY", priority: "P1", sop: "NDMA-SOP-USAR-03", title: "Pre-position NDRF Urban Search & Rescue Heavy Convoy", desc: "Dispatch specialized deep-cutting and acoustic rubble life detector units to high-risk landslide ghat corridors along Western Ghats prior to anticipated debris breach.", area: "Raigad (Mahad Ghats) & Satara (Patan Sector)", timeline: "Within 3 Hours", confidence: 94.2, resources: "NDRF Team 5 & 8, Drone Swarm Recon Alpha, 4 Canine Squads" },
+  { rank: 3, type: "ALERT", priority: "P2", sop: "ITU-T-CAP-2026", title: "Broadcast Multi-Lingual CAP Emergency Cell Broadcast", desc: "Transmit geofenced Level-3 siren broadcast via telecom BTS towers instructing public to avoid underpasses, power substations, and hillside slip roads.", area: "Mumbai MMR, Thane & Palghar Coastal Strip", timeline: "Within 30 Minutes", confidence: 98.1, resources: "NDMA CAP Gateway, 1,420 BTS Cellular Towers, FM Radio Relays" },
+  { rank: 4, type: "MONITOR", priority: "P2", sop: "CWC-HYD-MON-08", title: "Initiate Continuous Radar Altimeter & Dam Sluice Tracking", desc: "Maintain real-time telemetry downlink from Copernicus Sentinel-1 SAR and Central Water Commission hydrological radar stations at 10-minute polling cycles.", area: "Bhima, Godavari, and Krishna River Confluences", timeline: "Ongoing (Next 48 Hours)", confidence: 92.4, resources: "NRSC Hyderabad SAR Downlink, 88 IoT River Gauges" },
+  { rank: 5, type: "DEPLOY", priority: "P2", sop: "MSEDCL-GRID-PROT", title: "Execute Preventive Shutdown of Inundated 220kV Substations", desc: "Isolate vulnerable distribution substations located below high-flood line to prevent transformer explosions, electrical fires, and grid instability cascades.", area: "Pune (Sinhagad Rd Corridor) & Chiplun Industrial Zone", timeline: "T - 90 Minutes", confidence: 91.8, resources: "MSEDCL Rapid Isolation Units, 18 Mobile Diesel Generators" },
+  { rank: 6, type: "EVACUATE", priority: "P2", sop: "NDMA-SOP-LS-04", title: "Preemptive Relocation of Toe-Slope Vulnerable Hamlets", desc: "InSAR coherence loss analysis indicates 32mm shear deformation in uphill strata. Relocate 350 families residing on downslope terrace.", area: "Satara (Ambegaon/Koyna Valley) & Raigad (Poladpur)", timeline: "Within 4 Hours", confidence: 89.6, resources: "SDRF 3 Platoons, 24 State Transport Evacuation Buses" },
+  { rank: 7, type: "ALERT", priority: "P3", sop: "IMD-MAR-ADV-02", title: "Issue Absolute Ban on High-Seas Fishing & Port Operations", desc: "IMD Doppler radar projects coastal wind gusts exceeding 95 km/h with spring-tide swell height of 4.8 meters. Anchor all small maritime craft.", area: "Konkan Coastline (Ratnagiri to Dahanu)", timeline: "Valid for 72 Hours", confidence: 95.0, resources: "Indian Coast Guard Coastal Radar Net, Maritime Police" },
+  { rank: 8, type: "DEPLOY", priority: "P3", sop: "HEALTH-EPID-SOP-11", title: "Mobilize Medical Trauma & Anti-Venom Water Purification Units", desc: "Pre-position rapid response epidemiological squads equipped with chlorine tablets, ORS, leptospirosis chemoprophylaxis, and snakebite anti-venom vials.", area: "Kolhapur, Sangli & Gadchiroli Flood Camps", timeline: "Within 6 Hours", confidence: 93.1, resources: "Directorate of Health Services, 45 Mobile Medical Ambulances" },
+  { rank: 9, type: "MONITOR", priority: "P3", sop: "NHAI-CORR-ALERT", title: "Establish Emergency Traffic Diversion Rings on NH-48 & NH-66", desc: "Prepare physical barricading and police marshals for traffic diversion before water over-tops twin culverts on national freight corridors.", area: "NH-48 (Khambatki Ghat) & NH-66 (Jagbudi Bridge)", timeline: "Standby Readiness", confidence: 90.5, resources: "Highway Police 12 Patrols, Heavy Crane Towing Units" },
+  { rank: 10, type: "ALERT", priority: "P4", sop: "AGRI-CROP-ADVISORY", title: "Distribute Real-Time Crop & Livestock Protection Guidance", desc: "Notify agrarian panchayats via SMS/WhatsApp to move cattle from floodplains to designated raised highlands and secure harvested grain silos.", area: "Marathwada & Vidarbha Agrarian Districts", timeline: "Within 12 Hours", confidence: 88.0, resources: "Kisan Call Center SMS Gateway, District Agronomy Extension" }
+];
+
+// XAI Factor Weights per Hazard
+const XAI_HAZARDS = {
+  flood: {
+    title: "Hydrological Flood & Inundation",
+    score: 82,
+    threat: "CRITICAL VULNERABILITY",
+    color: "#ff1744",
+    factors: [
+      { name: "Catchment Rainfall Intensity", weight: 25, score: 92, note: "24h precipitation 240mm (3.2x normal threshold)" },
+      { name: "Antecedent Soil Saturation", weight: 20, score: 88, note: "Surface moisture 94%; infiltration capacity exhausted" },
+      { name: "River Water Gauge Level", weight: 20, score: 85, note: "0.4m below critical danger mark; rising at 8cm/hr" },
+      { name: "Historical Pattern & Topography", weight: 15, score: 75, note: "Corresponds to 2019 deluge recurrence footprint" },
+      { name: "Infrastructure Vulnerability", weight: 10, score: 78, note: "Paved urban impermeability + culvert bottlenecking" },
+      { name: "Population Exposure Density", weight: 10, score: 70, note: "28,000 residents in low-lying riparian floodway" }
+    ]
+  },
+  earthquake: {
+    title: "Seismic & Fault Rupture Hazard",
+    score: 68,
+    threat: "HIGH TECTONIC ELEVATION",
+    color: "#ff9100",
+    factors: [
+      { name: "Fault Line Stress Accumulation", weight: 25, score: 74, note: "Koyna-Warna microseismic swarm energy release" },
+      { name: "Historical Frequency & Return Period", weight: 20, score: 72, note: "Zone IV regional return period statistical window" },
+      { name: "Reservoir Induced Seismicity (RIS)", weight: 20, score: 68, note: "Koyna reservoir water head stress loading" },
+      { name: "Soil Liquefaction Potential", weight: 15, score: 62, note: "Alluvial river sediments along Krishna flood plain" },
+      { name: "Structural Masonry Vulnerability", weight: 10, score: 65, note: "Unreinforced stone/brick dwellings in rural sectors" },
+      { name: "Population Proximity to Epicenter", weight: 10, score: 58, note: "Focal depth estimated at 12km within 25km radius" }
+    ]
+  },
+  cyclone: {
+    title: "Tropical Cyclone Coastal Surge",
+    score: 75,
+    threat: "ELEVATED COASTAL THREAT",
+    color: "#ffd700",
+    factors: [
+      { name: "Sea Surface Temperature (SST)", weight: 25, score: 84, note: "Arabian Sea surface temp at 30.5°C (+1.8°C anomaly)" },
+      { name: "Central Atmospheric Pressure Drop", weight: 20, score: 76, note: "982 hPa central pressure with 115 km/h winds" },
+      { name: "Astronomical Spring Tide Phase", weight: 20, score: 78, note: "High tide coincidence generates 4.2m storm surge" },
+      { name: "Coastal InSAR Coastal Topography", weight: 15, score: 70, note: "Low-lying tidal mudflats and creek backwaters" },
+      { name: "Maritime Fishing Fleet Exposure", weight: 10, score: 68, note: "420 mechanized boats operating in 50 nautical miles" },
+      { name: "Coastal Dense Settlement Density", weight: 10, score: 72, note: "Dense koliwada fishing villages on littoral edge" }
+    ]
+  },
+  landslide: {
+    title: "Hillside Debris Flow & Landslide",
+    score: 86,
+    threat: "EXTREME SLIP PROBABILITY",
+    color: "#ff1744",
+    factors: [
+      { name: "Pore Water Pressure & Soil Wetting", weight: 25, score: 96, note: "Continuous 72h monsoon soaking; liquefaction limit reached" },
+      { name: "Hill Slope Gradient (&gt;35° Angle)", weight: 20, score: 90, note: "Western Ghats steep basaltic escarpment geometry" },
+      { name: "InSAR Radar Coherence Degradation", weight: 20, score: 85, note: "Sentinel-1 DPM shows 34mm creep in last 12 days" },
+      { name: "Deforestation & Road Cutting Notch", weight: 15, score: 80, note: "Highway widening toe excavations unbalance slope" },
+      { name: "Overburden Soil Layer Thickness", weight: 10, score: 78, note: "Lateritic overburden sitting on polished basalt plane" },
+      { name: "Downslope Settlement Density", weight: 10, score: 75, note: "4 hamlets situated immediately along alluvial cone" }
+    ]
+  },
+  heatwave: {
+    title: "Extreme Meteorological Heatwave",
+    score: 65,
+    threat: "MODERATE-HIGH HEAT STRESS",
+    color: "#ff9100",
+    factors: [
+      { name: "Maximum Temperature Anomaly", weight: 25, score: 82, note: "Day temp 45.8°C (+5.4°C above climatological normal)" },
+      { name: "Wet-Bulb Globe Index (WBGT)", weight: 20, score: 70, note: "Elevated humidity in river valleys compounds heat index" },
+      { name: "Night Minimum Temperature Retention", weight: 20, score: 68, note: "Night min 31.5°C; zero physiological nocturnal cooling" },
+      { name: "Dry Hot Continental Advection", weight: 15, score: 62, note: "Northwesterly dry desert winds across Vidarbha" },
+      { name: "Outdoor Agrarian Labor Exposure", weight: 10, score: 60, note: "High agricultural harvesting manual workforce" },
+      { name: "Healthcare Hospital Cooling Deficit", weight: 10, score: 48, note: "Primary health centers equipped with cold rooms" }
+    ]
+  }
+};
+
+// 10-Year Historical Data (2016-2026)
+const HISTORICAL_DB = {
+  years: ["2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026"],
+  floods: [14, 18, 22, 45, 26, 42, 31, 28, 38, 34, 41],
+  earthquakes: [6, 8, 9, 12, 7, 10, 11, 8, 14, 10, 12],
+  cyclones: [3, 4, 6, 7, 5, 8, 4, 6, 7, 5, 6],
+  landslides: [12, 15, 19, 38, 22, 54, 29, 24, 36, 30, 39],
+  heatwaves: [18, 22, 25, 29, 21, 27, 33, 30, 37, 35, 42],
+  monthlyDist: {
+    "2026": [3, 2, 6, 12, 18, 34, 48, 44, 26, 14, 6, 2],
+    "2025": [2, 1, 5, 11, 16, 28, 42, 38, 22, 11, 4, 1],
+    "2024": [2, 3, 7, 14, 19, 32, 45, 41, 25, 12, 5, 2],
+    "2021": [4, 2, 8, 13, 24, 39, 58, 51, 31, 16, 7, 3],
+    "2019": [1, 2, 6, 12, 17, 35, 62, 56, 29, 15, 6, 2]
+  }
+};
+
+/* =====================================================================
+   CHART.JS INSTANCES HOLDER
+   ===================================================================== */
+let chartRadar = null;
+let chartHistorical = null;
+let chartSimImpact = null;
+let chartForecastPrecip = null;
+let chartEnsemble = null;
+let gaugeCharts = {};
+
+/* =====================================================================
+   INITIALIZATION ON DOM LOAD
+   ===================================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+  initClock();
+  populateDistrictDropdowns();
+  initSummarizer();
+  filterRecommendations('ALL');
+  switchXAIHazard('flood');
+  initSimulation();
+  loadHistoricalPatterns('2026');
+  updateDistrictAnalysis();
+  renderDecisionTree('FLOOD');
+  fetch4DayForecast();
+  initConfidenceDashboard();
+  
+  // Start 5-min auto-countdown
+  startSitrepCountdown();
+});
+
+/* =====================================================================
+   IST CLOCK ENGINE
+   ===================================================================== */
+function initClock() {
+  const clockEl = document.getElementById("clock-ist");
+  setInterval(() => {
+    const now = new Date();
+    clockEl.textContent = now.toLocaleTimeString('en-IN', { hour12: false });
+  }, 1000);
+}
+
+/* =====================================================================
+   SECTION 1: AI DISASTER SITUATION SUMMARIZER
+   ===================================================================== */
+function startSitrepCountdown() {
+  clearInterval(APP_STATE.timerInterval);
+  APP_STATE.sitrepCountdown = 300; // 5 mins
+
+  APP_STATE.timerInterval = setInterval(() => {
+    APP_STATE.sitrepCountdown--;
+    if (APP_STATE.sitrepCountdown <= 0) {
+      refreshSummary(false);
+      APP_STATE.sitrepCountdown = 300;
+    }
+    const mins = String(Math.floor(APP_STATE.sitrepCountdown / 60)).padStart(2, '0');
+    const secs = String(APP_STATE.sitrepCountdown % 60).padStart(2, '0');
+    const timerEl = document.getElementById("sitrep-countdown");
+    if (timerEl) timerEl.textContent = `${mins}:${secs}`;
+  }, 1000);
+}
+
+function setLanguage(lang) {
+  APP_STATE.language = lang;
+  document.getElementById("btn-lang-en").classList.toggle("active", lang === 'en');
+  document.getElementById("btn-lang-hi").classList.toggle("active", lang === 'hi');
+  document.getElementById("btn-lang-mr").classList.toggle("active", lang === 'mr');
+  refreshSummary(false);
+}
+
+async function refreshSummary(isManual) {
+  const bodyEl = document.getElementById("sitrep-body-text");
+  const headlineEl = document.getElementById("sitrep-title");
+  
+  if (isManual) {
+    bodyEl.innerHTML = `<span style="color:var(--accent-cyan);">⚡ Neural inference underway... Polling /api/ai/summary [${APP_STATE.language.toUpperCase()}]...</span>`;
+  }
+
+  try {
+    const res = await fetch(`/api/ai/summary?lang=${APP_STATE.language}`);
+    if (res.ok) {
+      const data = await res.json();
+      renderSummaryData(data);
+      return;
+    }
+  } catch (err) {
+    console.warn("Backend /api/ai/summary call fallback:", err);
+  }
+
+  // Graceful client synthesis fallback
+  const mockSummaries = {
+    en: {
+      headline: "NATIONAL MULTI-HAZARD SITUATIONAL BRIEFING",
+      body: "Strategic Command Telemetry indicates elevated multi-basin flood conditions across South and Western Maharashtra. Heavy catchment downpours in the Koyna, Radhanagari, and Khadakwasla catchments have accelerated reservoir inflows to 92% active capacity. Sluice discharge will create hydrodynamic surge fronts along the Panchganga and Mula-Mutha river corridors within the next 12–16 hours. Sentinel-1 SAR coherence reveals expanding water masks across 18,400 hectares of agrarian lowlands. SDRF and 16 NDRF battalions have been armed with ITU-T CAP geofenced alerts.",
+      hazard: "🌊 Hydrological (Flood / Inundation)",
+      zone: "Kolhapur & Panchganga Basin",
+      leadTime: "14.5 Hours Window",
+      sop: "NDMA-RED-ACT-04",
+      riskTag: "RISK: LEVEL-4 HIGH (78/100)"
+    },
+    hi: {
+      headline: "राष्ट्रीय बहु-आपदा स्थिति विवरण (AI SITREP)",
+      body: "प्रहारी-एक्स सामरिक कमान विश्लेषण के अनुसार पश्चिमी व दक्षिणी महाराष्ट्र के नदी बेसिनों में जलस्तर अत्यंत तीव्र गति से बढ़ रहा है। कोयना, राधानगरी और खडकवासला जलग्रहण क्षेत्रों में मूसलाधार बारिश के चलते जलाशयों में 92% से अधिक जलभराव हो चुका है। अगले 12 से 16 घंटों में पंचगंगा और मुला-मुठा नदियों में बाढ़ का उच्च प्रवाह आने की संभावना है। सेंटिनल-1 सार उपग्रह डेटा ने 18,400 हेक्टेयर क्षेत्र में जल भराव की पुष्टि की है। एनडीआरएफ की सभी बटालियनें अलर्ट पर हैं।",
+      hazard: "🌊 जल-प्रलय (बाढ़ एवं जलप्लावन)",
+      zone: "कोल्हापुर एवं पंचगंगा बेसिन",
+      leadTime: "14.5 घंटे का समय",
+      sop: "NDMA-RED-ACT-04",
+      riskTag: "जोखिम: स्तर-4 उच्च (78/100)"
+    },
+    mr: {
+      headline: "राष्ट्रीय बहु-आपत्ती परिस्थिती अहवाल (AI SITREP)",
+      body: "प्रहारी-एक्स रणनीतिक कमान केंद्रानुसार पश्चिम व दक्षिण महाराष्ट्रातील नद्यांच्या खोऱ्यात पूरस्थिती अत्यंत गंभीर बनत आहे. कोयना, राधानगरी आणि खडकवासला धरण क्षेत्रात अतिवृष्टीमुळे जलसाठा ९२ टक्क्यांवर पोहोचला आहे. पुढील १२ ते १६ तासांत पंचगंगा आणि मुळा-मुठा नदीपात्रात विसर्गामुळे पूर पातळी धोकादायक चिन्हाला ओलांडण्याची शक्यता आहे. सेंटिनेल-१ सॅटेलाइट रडारने १८,४०० हेक्टर शेतीक्षेत्रात पाणी साचल्याचे नोंदवले आहे. एनडीआरएफ व एसडीआरएफ तैनात करण्यात आले आहेत.",
+      hazard: "🌊 जल आपत्ती (पूर व जलमय क्षेत्र)",
+      zone: "कोल्हापूर व पंचगंगा खोरे",
+      leadTime: "१४.५ तासांची पूर्वसूचना",
+      sop: "NDMA-RED-ACT-04",
+      riskTag: "धोका पातळी: स्तर-४ उच्च (७८/१००)"
+    }
+  };
+
+  const selected = mockSummaries[APP_STATE.language] || mockSummaries.en;
+  renderSummaryData(selected);
+}
+
+function renderSummaryData(data) {
+  document.getElementById("sitrep-title").textContent = data.headline || "NATIONAL MULTI-HAZARD SITUATION REPORT";
+  document.getElementById("sitrep-body-text").textContent = data.body || data.text || "";
+  document.getElementById("sitrep-hazard-type").textContent = data.hazard || "🌊 Hydrological (Flood / Inundation)";
+  document.getElementById("sitrep-high-zone").textContent = data.zone || "Kolhapur & Panchganga Basin";
+  document.getElementById("sitrep-lead-time").textContent = data.leadTime || "14.5 Hours Window";
+  document.getElementById("sitrep-sop-code").textContent = data.sop || "NDMA-RED-ACT-04";
+  if (data.riskTag) {
+    document.getElementById("sitrep-risk-tag").textContent = data.riskTag;
+  }
+}
+
+function initSummarizer() {
+  refreshSummary(false);
+}
+
+/* =====================================================================
+   SECTION 2: NATURAL LANGUAGE DISASTER QUERY
+   ===================================================================== */
+function setQuery(queryText) {
+  document.getElementById("nl-query-input").value = queryText;
+  executeNLQuery();
+}
+
+async function executeNLQuery() {
+  const inputEl = document.getElementById("nl-query-input");
+  const query = inputEl.value.trim();
+  if (!query) return;
+
+  const card = document.getElementById("query-result-card");
+  card.style.display = "block";
+  document.getElementById("qr-target-title").textContent = `Query: "${query}"`;
+  document.getElementById("qr-direct-answer").innerHTML = `<span style="color:var(--accent-cyan);">⚡ Neural Semantic Parser resolving query parameters...</span>`;
+
+  try {
+    const res = await fetch('/api/ai/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: query })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      renderQueryResult(data);
+      return;
+    }
+  } catch (err) {
+    console.warn("Backend /api/ai/query offline, rendering PINN engine fallback:", err);
+  }
+
+  // Smart Contextual Knowledge Base Fallback
+  const qLower = query.toLowerCase();
+  let resultObj = {
+    answer: "Detailed hydrodynamic and terrain telemetry indicates elevated threat probability based on current sensor inputs.",
+    risk: "ELEVATED (76/100)",
+    riskColor: "var(--accent-red)",
+    confidence: "94.6%",
+    zones: "Central Basin Wards, Lowland Crossings, Riparian Corridor",
+    factors: "Precipitation Accumulation, Saturated Topsoil, Upstream Discharge",
+    guidance: "Enforce pre-evacuation alert, inspect backwater gates, standby NDRF units."
+  };
+
+  if (qLower.includes("pune") || qLower.includes("mula") || qLower.includes("mutha")) {
+    resultObj = {
+      answer: "Flood threat in Pune Municipal Corporation limits is currently ELEVATED. Khadakwasla dam storage is at 94.6% capacity with outflow projected at 32,500 cusecs. Backwater accumulation will impact low-lying riparian settlements in Sinhagad Road, Deccan Gymkhana, and Sangam Bridge within 8 hours. Mula-Mutha confluence will record gauge depth of +1.8m above warning line.",
+      risk: "HIGH (82/100)",
+      riskColor: "var(--accent-red)",
+      confidence: "96.4%",
+      zones: "Sinhagad Road (Ekta Nagari), Pulachi Wadi, Deccan Gymkhana, Yerawada lowlands",
+      factors: "Khadakwasla spillway release (32,500 cfs) + Ghat catchment rain (145mm/24h)",
+      guidance: "Issue Level-2 Red Alert, relocate riverside slum clusters, deploy SDRF boats at Bund Garden."
+    };
+  } else if (qLower.includes("koyna") || qLower.includes("seismic") || qLower.includes("earthquake")) {
+    resultObj = {
+      answer: "Seismic stress analysis shows continuous microseismic swarm release along the Koyna-Warna rupture zone (focal depths 8–14 km). The dam structural health telemetry (piezometers and accelerometer sensors) confirms structural integrity with crest displacement < 1.2mm. Seismic fault creep indicates high return probability for M4.5–M5.2 tremors, but dam failure risk remains mathematically negligible (<0.02%).",
+      risk: "MODERATE (64/100)",
+      riskColor: "var(--accent-amber)",
+      confidence: "91.8%",
+      zones: "Koynanagar, Patan, Helwak, Karad fault buffer (30km radius)",
+      factors: "Reservoir Induced Seismicity (RIS) + seasonal hydraulic head pressure variation",
+      guidance: "Maintain 24/7 triaxial seismograph polling; verify emergency siren interlock network."
+    };
+  } else if (qLower.includes("cyclone") || qLower.includes("konkan") || qLower.includes("mumbai")) {
+    resultObj = {
+      answer: "Arabian Sea deep atmospheric depression is organizing into a Severe Cyclonic Storm (estimated central pressure 984 hPa) moving north-northeast. Projected landfall corridor lies 120km south of Mumbai near Ratnagiri-Raigad coastline in approximately 36 hours. Expect sustained wind gusts of 90–115 km/h and localized tidal storm surges of 3.8 to 4.5 meters during astronomical spring tide.",
+      risk: "SEVERE (88/100)",
+      riskColor: "var(--accent-red)",
+      confidence: "95.2%",
+      zones: "Raigad (Alibag, Murud), Ratnagiri Coast, Mumbai MMR South Littoral Wards",
+      factors: "Warm SST (30.4°C) + low vertical wind shear in East-Central Arabian Sea",
+      guidance: "Prohibit all coastal fishing, secure harbor cranes, order preventive power isolation in salt-spray zones."
+    };
+  } else if (qLower.includes("landslide") || qLower.includes("raigad") || qLower.includes("ghat")) {
+    resultObj = {
+      answer: "Western Ghats steep escarpments in Raigad (Mahad, Poladpur) show critical geotechnical pore pressure saturation. SAR coherence loss reveals 36mm subsurface slope displacement. Soil moisture index is at 98% saturation. Debris flow and rockfall probability is rated as EXTREME across NH-66 and state ghat connectors.",
+      risk: "CRITICAL (93/100)",
+      riskColor: "var(--accent-red)",
+      confidence: "97.1%",
+      zones: "Taliye slope sector, Ambenali Ghat, Mahad-Varandha Pass, Poladpur hamlets",
+      factors: "72h rain accumulation (380mm) + saturated laterite overburden on polished basalt",
+      guidance: "Mandatory daylight-only convoy transit; execute preemptive relocation of 400 toe-slope residents."
+    };
+  } else if (qLower.includes("nagpur") || qLower.includes("vidarbha") || qLower.includes("heat")) {
+    resultObj = {
+      answer: "Numerical Weather Prediction (NWP) model projects persistent high-pressure anticyclone over Vidarbha causing maximum temperatures between 45.5°C and 47.2°C over the next 96 hours. Severe heatwave (Loo) conditions with low relative humidity (14–22%) will prevail, significantly elevating heat stroke risk among outdoor workers.",
+      risk: "HIGH (79/100)",
+      riskColor: "var(--accent-orange)",
+      confidence: "93.4%",
+      zones: "Nagpur Urban, Chandrapur, Wardha, Akola, and eastern industrial belts",
+      factors: "Northwesterly dry continental winds + clear cloudless solar insolation peak",
+      guidance: "Enforce midday outdoor labor curfew (12:00–16:00); activate cooling centers in civic hospitals."
+    };
+  }
+
+  renderQueryResult(resultObj);
+}
+
+function renderQueryResult(data) {
+  document.getElementById("qr-direct-answer").textContent = data.answer;
+  document.getElementById("qr-risk-badge").textContent = `RISK: ${data.risk}`;
+  document.getElementById("qr-risk-badge").style.borderColor = data.riskColor || "var(--accent-red)";
+  document.getElementById("qr-risk-badge").style.color = data.riskColor || "var(--accent-red)";
+  document.getElementById("qr-confidence-badge").textContent = `CONFIDENCE: ${data.confidence}`;
+  document.getElementById("qr-affected-zones").textContent = data.zones;
+  document.getElementById("qr-key-factors").textContent = data.factors;
+  document.getElementById("qr-action-guidance").textContent = data.guidance;
+  document.getElementById("qr-timestamp").textContent = `Generated at ${new Date().toLocaleTimeString()} IST • PRAHARIX Neural AI`;
+}
+
+/* =====================================================================
+   SECTION 3: AI EMERGENCY RECOMMENDATIONS
+   ===================================================================== */
+function filterRecommendations(category) {
+  const container = document.getElementById("rec-cards-container");
+  container.innerHTML = "";
+
+  // Update filter button styling
+  const buttons = document.querySelectorAll(".rec-filter-btn");
+  buttons.forEach(b => {
+    b.classList.toggle("active", b.textContent.includes(category) || (category === "ALL" && b.textContent.includes("All")));
+  });
+
+  const filtered = category === "ALL" 
+    ? RECOMMENDATIONS_DB 
+    : RECOMMENDATIONS_DB.filter(r => r.type === category);
+
+  filtered.forEach(item => {
+    const pClass = item.priority.toLowerCase();
+    const card = document.createElement("div");
+    card.className = `rec-item priority-${pClass}`;
+    
+    let typeBadgeColor = "var(--accent-cyan)";
+    if (item.type === "EVACUATE") typeBadgeColor = "var(--accent-red)";
+    if (item.type === "DEPLOY") typeBadgeColor = "var(--accent-orange)";
+    if (item.type === "ALERT") typeBadgeColor = "var(--accent-amber)";
+    if (item.type === "MONITOR") typeBadgeColor = "var(--accent-green)";
+
+    card.innerHTML = `
+      <div class="rec-left">
+        <div class="rec-rank">#${item.rank}</div>
+        <div class="rec-details">
+          <h4>
+            <span>${item.title}</span>
+            <span class="badge-tech" style="border-color:${typeBadgeColor}; color:${typeBadgeColor};">${item.type}</span>
+            <span class="badge-tech" style="border-color:rgba(255,255,255,0.2); color:#fff;">${item.priority}</span>
+          </h4>
+          <p>${item.desc}</p>
+          <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">
+            Required Assets: <b style="color:#e2e8f0;">${item.resources}</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="rec-meta-pills">
+        <div class="rec-meta-pill">📍 Area: <strong>${item.area}</strong></div>
+        <div class="rec-meta-pill">⏱️ Timeline: <strong>${item.timeline}</strong></div>
+        <div class="rec-meta-pill">🎯 Conf: <strong style="color:var(--accent-green);">${item.confidence}%</strong></div>
+        <div class="rec-meta-pill">📜 SOP: <strong style="color:var(--accent-cyan);">${item.sop}</strong></div>
+        <button class="btn-action" style="padding:5px 12px; font-size:10.5px;" onclick="acknowledgeDirective(${item.rank})">
+          ✓ Dispatch Order
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function acknowledgeDirective(rank) {
+  alert(`[TACTICAL DISPATCH ACKNOWLEDGED]\nDirective #${rank} logged in NDMA Operational Incident Log.\nAutomated dispatch sequence sent to Field Command Unit.`);
+}
+
+function exportTacticalIAP() {
+  alert(`[NDMA INCIDENT ACTION PLAN GENERATED]\nExporting comprehensive ICS-201/204 multi-hazard operational matrix for State Emergency Operations Center (SEOC).`);
+  window.print();
+}
+
+/* =====================================================================
+   SECTION 4: EXPLAINABLE AI (XAI) RISK ASSESSMENT
+   ===================================================================== */
+function switchXAIHazard(hazardKey) {
+  APP_STATE.activeHazard = hazardKey;
+  
+  // Highlight tab
+  const tabs = document.querySelectorAll(".xai-tab-btn");
+  tabs.forEach(t => {
+    t.classList.toggle("active", t.getAttribute("onclick").includes(`'${hazardKey}'`));
+  });
+
+  const data = XAI_HAZARDS[hazardKey] || XAI_HAZARDS.flood;
+  
+  // Update header gauge
+  const valEl = document.getElementById("xai-composite-val");
+  valEl.textContent = data.score;
+  valEl.style.color = data.color;
+  document.getElementById("xai-threat-label").textContent = data.threat;
+  document.getElementById("xai-threat-label").style.color = data.color;
+
+  // Render factor bars
+  const container = document.getElementById("xai-factors-container");
+  container.innerHTML = "";
+
+  data.factors.forEach(f => {
+    const contribution = ((f.weight * f.score) / 100).toFixed(1);
+    const row = document.createElement("div");
+    row.className = "factor-row";
+
+    let barColor = "var(--accent-cyan)";
+    if (f.score > 85) barColor = "var(--accent-red)";
+    else if (f.score > 70) barColor = "var(--accent-orange)";
+    else if (f.score > 55) barColor = "var(--accent-amber)";
+
+    row.innerHTML = `
+      <div class="factor-info-line">
+        <span class="name">
+          <span>●</span> ${f.name}
+        </span>
+        <span class="weight">Weight: ${f.weight}% | Contrib: +${contribution} pts</span>
+      </div>
+      <div class="factor-bar-track">
+        <div class="factor-bar-fill" style="width:0%; background:${barColor};" data-target="${f.score}"></div>
+      </div>
+      <div class="factor-sub-note">
+        <span>${f.note}</span>
+        <strong style="color:${barColor}; font-weight:800;">Sub-Score: ${f.score}/100</strong>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  // Animate factor bars smoothly
+  setTimeout(() => {
+    document.querySelectorAll(".factor-bar-fill").forEach(bar => {
+      const target = bar.getAttribute("data-target");
+      bar.style.width = target + "%";
+    });
+  }, 50);
+}
+
+/* =====================================================================
+   SECTION 5: WHAT-IF DISASTER SIMULATION ENGINE
+   ===================================================================== */
+function updateSliderVal(sliderId, val, unit) {
+  document.getElementById(`val-${sliderId}`).textContent = val + unit;
+}
+
+async function runWhatIfSimulation() {
+  const hazard = document.getElementById("sim-hazard-type").value;
+  const location = document.getElementById("sim-location").value;
+  const timeOfDay = document.getElementById("sim-time").value;
+  const season = document.getElementById("sim-season").value;
+
+  const mag = parseFloat(document.getElementById("slider-mag").value);
+  const rain = parseFloat(document.getElementById("slider-rain").value);
+  const wind = parseFloat(document.getElementById("slider-wind").value);
+  const dur = parseFloat(document.getElementById("slider-dur").value);
+
+  // Try real API call to /api/ai/whatif
+  try {
+    const res = await fetch('/api/ai/whatif', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hazard, location, timeOfDay, season, mag, rain, wind, dur })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      renderWhatIfResults(data);
+      return;
+    }
+  } catch (err) {
+    console.warn("Backend /api/ai/whatif offline, using client physics engine:", err);
+  }
+
+  // Client-Side Dynamic Cascade Physics Engine
+  let baseDensity = 500;
+  if (location === "Mumbai") baseDensity = 18000;
+  else if (location === "Pune") baseDensity = 8000;
+  else if (location === "Kolhapur") baseDensity = 2500;
+  else if (location === "Raigad") baseDensity = 1200;
+
+  // Population impact calculation
+  let severityIndex = 1.0;
+  if (hazard === "FLOOD") {
+    severityIndex = (rain / 200) * (dur / 18);
+  } else if (hazard === "EARTHQUAKE") {
+    severityIndex = Math.pow(10, (mag - 5.0) * 0.85);
+  } else if (hazard === "CYCLONE") {
+    severityIndex = (wind / 100) * (dur / 12);
+  } else if (hazard === "LANDSLIDE") {
+    severityIndex = (rain / 220) * (mag / 5.5);
+  } else {
+    severityIndex = (rain / 180);
+  }
+
+  const affectedPop = Math.min(Math.round(baseDensity * severityIndex * 38), 3500000);
+  const economicLossCr = Math.round(severityIndex * 480 + (affectedPop / 1000) * 2.8);
+  const ndrfTeams = Math.min(Math.max(Math.round(affectedPop / 35000), 2), 48);
+  const reliefCamps = Math.min(Math.max(Math.round(affectedPop / 12000), 4), 180);
+
+  const resultData = {
+    pop: affectedPop.toLocaleString('en-IN'),
+    loss: `₹ ${economicLossCr.toLocaleString('en-IN')} Cr`,
+    ndrf: `${ndrfTeams} Teams`,
+    camps: `${reliefCamps} Camps`,
+    leadTime: (hazard === "EARTHQUAKE" ? "Immediate (45s S-Wave)" : `${(18 / (severityIndex + 0.5)).toFixed(1)} hrs Window`),
+    stage1: {
+      title: `Stage 1: Primary ${hazard} Incursion (${location})`,
+      desc: `Rapid initiation under ${season} meteorological baseline. Local infrastructure absorptive threshold surpassed.`
+    },
+    stage2: {
+      title: "Stage 2: Secondary Embankment & Slope Failure",
+      desc: `Hydrodynamic and shear stress triggers localized levee breaches and transport arterial subsidence.`
+    },
+    stage3: {
+      title: "Stage 3: Substation Tripping & Communications Severance",
+      desc: `Water ingress / vibration cuts primary 220kV feeders. Emergency telecommunications shift to VHF/LoRa mesh.`
+    },
+    stage4: {
+      title: "Stage 4: Regional Logistical Strangulation",
+      desc: `National highway bridges closed to civilian transit. Inter-district relief convoys restricted to airlift and tracked USAR carriers.`
+    },
+    chartDemanded: [ndrfTeams, Math.round(ndrfTeams * 1.4), Math.round(ndrfTeams * 2.1), Math.round(ndrfTeams * 1.8), Math.round(ndrfTeams * 1.2)],
+    chartMobilized: [2, Math.round(ndrfTeams * 0.7), Math.round(ndrfTeams * 1.6), Math.round(ndrfTeams * 1.9), Math.round(ndrfTeams * 2.0)]
+  };
+
+  renderWhatIfResults(resultData);
+}
+
+function renderWhatIfResults(data) {
+  document.getElementById("sim-res-pop").textContent = data.pop;
+  document.getElementById("sim-res-loss").textContent = data.loss;
+  document.getElementById("sim-res-ndrf").textContent = data.ndrf;
+  document.getElementById("sim-res-camps").textContent = data.camps;
+  document.getElementById("sim-cascade-lead").textContent = `Lead Time to Catastrophe: ${data.leadTime}`;
+
+  document.getElementById("cascade-stage1-title").textContent = data.stage1.title;
+  document.getElementById("cascade-stage1-desc").textContent = data.stage1.desc;
+  document.getElementById("cascade-stage2-title").textContent = data.stage2.title;
+  document.getElementById("cascade-stage2-desc").textContent = data.stage2.desc;
+  document.getElementById("cascade-stage3-title").textContent = data.stage3.title;
+  document.getElementById("cascade-stage3-desc").textContent = data.stage3.desc;
+  document.getElementById("cascade-stage4-title").textContent = data.stage4.title;
+  document.getElementById("cascade-stage4-desc").textContent = data.stage4.desc;
+
+  updateSimChart(data.chartDemanded, data.chartMobilized);
+}
+
+function initSimulation() {
+  const ctx = document.getElementById("simImpactChart").getContext("2d");
+  chartSimImpact = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ["T+0h", "T+6h", "T+12h", "T+24h", "T+48h"],
+      datasets: [
+        {
+          label: "Teams Demanded",
+          data: [14, 22, 34, 28, 18],
+          borderColor: "#ff1744",
+          backgroundColor: "rgba(255, 23, 68, 0.15)",
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2
+        },
+        {
+          label: "Teams Mobilized (Actual)",
+          data: [4, 12, 26, 32, 34],
+          borderColor: "#00bfff",
+          backgroundColor: "rgba(0, 191, 255, 0.1)",
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#94a3b8", font: { size: 10 } } }
+      },
+      scales: {
+        x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#94a3b8", font: { size: 10 } } },
+        y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#94a3b8", font: { size: 10 } } }
+      }
+    }
+  });
+
+  runWhatIfSimulation();
+}
+
+function updateSimChart(demanded, mobilized) {
+  if (!chartSimImpact) return;
+  chartSimImpact.data.datasets[0].data = demanded;
+  chartSimImpact.data.datasets[1].data = mobilized;
+  chartSimImpact.update();
+}
+
+/* =====================================================================
+   SECTION 6: HISTORICAL DISASTER PATTERN ANALYSIS
+   ===================================================================== */
+async function loadHistoricalPatterns(selectedYear) {
+  document.getElementById("heatmap-year-label").textContent = selectedYear;
+
+  // Try API call
+  try {
+    const res = await fetch(`/api/ai/history?year=${selectedYear}`);
+    if (res.ok) {
+      const data = await res.json();
+      renderHistoricalViews(data, selectedYear);
+      return;
+    }
+  } catch (err) {
+    console.warn("Backend /api/ai/history offline, using decadal historical dataset:", err);
+  }
+
+  renderHistoricalViews(HISTORICAL_DB, selectedYear);
+}
+
+function renderHistoricalViews(db, year) {
+  // 1. Chart.js 10-Year Trend
+  const ctx = document.getElementById("historicalTrendChart").getContext("2d");
+  if (chartHistorical) chartHistorical.destroy();
+
+  chartHistorical = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: db.years,
+      datasets: [
+        {
+          label: "Floods",
+          data: db.floods,
+          backgroundColor: "#00bfff",
+          borderRadius: 4
+        },
+        {
+          label: "Landslides",
+          data: db.landslides,
+          backgroundColor: "#ff1744",
+          borderRadius: 4
+        },
+        {
+          label: "Heatwaves",
+          data: db.heatwaves,
+          backgroundColor: "#ffd700",
+          borderRadius: 4
+        },
+        {
+          label: "Earthquakes",
+          data: db.earthquakes,
+          backgroundColor: "#b388ff",
+          borderRadius: 4
+        },
+        {
+          label: "Cyclones",
+          data: db.cyclones,
+          backgroundColor: "#00e676",
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#94a3b8", font: { size: 10.5 } } }
+      },
+      scales: {
+        x: { stacked: true, grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#94a3b8" } },
+        y: { stacked: true, grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#94a3b8" } }
+      }
+    }
+  });
+
+  // 2. Heatmap Calendar (12 Months)
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const gridEl = document.getElementById("heatmap-calendar-grid");
+  gridEl.innerHTML = "";
+
+  const monthlyCounts = (db.monthlyDist && db.monthlyDist[year]) || [2, 3, 6, 12, 18, 34, 48, 44, 26, 14, 6, 2];
+  const maxVal = Math.max(...monthlyCounts, 1);
+
+  monthlyCounts.forEach((count, idx) => {
+    const intensity = count / maxVal;
+    let bg = "rgba(0, 191, 255, 0.1)";
+    let border = "rgba(0, 191, 255, 0.2)";
+    let textC = "#fff";
+
+    if (intensity > 0.75) {
+      bg = "rgba(255, 23, 68, 0.4)";
+      border = "#ff1744";
+      textC = "#ff6b81";
+    } else if (intensity > 0.45) {
+      bg = "rgba(255, 145, 0, 0.3)";
+      border = "#ff9100";
+      textC = "#ffa726";
+    } else if (intensity > 0.25) {
+      bg = "rgba(0, 191, 255, 0.2)";
+      border = "#00bfff";
+    }
+
+    const cell = document.createElement("div");
+    cell.className = "cal-cell";
+    cell.style.background = bg;
+    cell.style.borderColor = border;
+    cell.innerHTML = `
+      <div class="cal-month">${monthNames[idx]}</div>
+      <div class="cal-count" style="color:${textC}">${count}</div>
+    `;
+    cell.title = `${monthNames[idx]} ${year}: ${count} total multi-hazard events`;
+    gridEl.appendChild(cell);
+  });
+}
+
+/* =====================================================================
+   SECTION 7: PREDICTIVE RISK COMPARISON (DISTRICTS)
+   ===================================================================== */
+function populateDistrictDropdowns() {
+  const selA = document.getElementById("district-select-a");
+  const selB = document.getElementById("district-select-b");
+
+  selA.innerHTML = "";
+  selB.innerHTML = "";
+
+  MAHARASHTRA_DISTRICTS.forEach(d => {
+    const optA = document.createElement("option");
+    optA.value = d.name;
+    optA.textContent = `${d.name} (${d.region})`;
+    if (d.name === "Pune") optA.selected = true;
+    selA.appendChild(optA);
+
+    const optB = document.createElement("option");
+    optB.value = d.name;
+    optB.textContent = `${d.name} (${d.region})`;
+    if (d.name === "Kolhapur") optB.selected = true;
+    selB.appendChild(optB);
+  });
+}
+
+function updateDistrictAnalysis() {
+  const nameA = document.getElementById("district-select-a").value;
+  const nameB = document.getElementById("district-select-b").value;
+
+  const distA = MAHARASHTRA_DISTRICTS.find(d => d.name === nameA) || MAHARASHTRA_DISTRICTS[25];
+  const distB = MAHARASHTRA_DISTRICTS.find(d => d.name === nameB) || MAHARASHTRA_DISTRICTS[14];
+
+  // Render Card A
+  document.getElementById("da-name").textContent = `${distA.name} District`;
+  document.getElementById("da-region").textContent = distA.region;
+  document.getElementById("da-basin").textContent = distA.basin;
+  document.getElementById("da-seismic").textContent = distA.seismic;
+  document.getElementById("da-density").textContent = `${distA.density} / km²`;
+  document.getElementById("da-landslide-zone").textContent = distA.landslide;
+  document.getElementById("da-shelter-cap").textContent = `${distA.shelter.toLocaleString('en-IN')} Beds`;
+  document.getElementById("da-note").textContent = distA.note;
+  document.getElementById("da-composite-badge").textContent = `RISK: ${distA.risk}/100`;
+
+  // Render Card B
+  document.getElementById("db-name").textContent = `${distB.name} District`;
+  document.getElementById("db-region").textContent = distB.region;
+  document.getElementById("db-basin").textContent = distB.basin;
+  document.getElementById("db-seismic").textContent = distB.seismic;
+  document.getElementById("db-density").textContent = `${distB.density} / km²`;
+  document.getElementById("db-landslide-zone").textContent = distB.landslide;
+  document.getElementById("db-shelter-cap").textContent = `${distB.shelter.toLocaleString('en-IN')} Beds`;
+  document.getElementById("db-note").textContent = distB.note;
+  document.getElementById("db-composite-badge").textContent = `RISK: ${distB.risk}/100`;
+
+  // Update Radar Chart
+  const ctx = document.getElementById("districtRadarChart").getContext("2d");
+  if (chartRadar) chartRadar.destroy();
+
+  chartRadar = new Chart(ctx, {
+    type: "radar",
+    data: {
+      labels: ["Flood Risk", "Seismic", "Cyclone/Storm", "Landslide", "Drought", "Heatwave"],
+      datasets: [
+        {
+          label: distA.name,
+          data: [distA.flood, distA.eq, distA.cyclone, distA.ls, distA.drought, distA.heat],
+          backgroundColor: "rgba(0, 191, 255, 0.25)",
+          borderColor: "#00bfff",
+          pointBackgroundColor: "#00bfff",
+          pointBorderColor: "#fff",
+          borderWidth: 2
+        },
+        {
+          label: distB.name,
+          data: [distB.flood, distB.eq, distB.cyclone, distB.ls, distB.drought, distB.heat],
+          backgroundColor: "rgba(255, 23, 68, 0.25)",
+          borderColor: "#ff1744",
+          pointBackgroundColor: "#ff1744",
+          pointBorderColor: "#fff",
+          borderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#e2e8f0", font: { size: 11, weight: "bold" } } }
+      },
+      scales: {
+        r: {
+          angleLines: { color: "rgba(255, 255, 255, 0.1)" },
+          grid: { color: "rgba(255, 255, 255, 0.08)" },
+          pointLabels: { color: "#94a3b8", font: { size: 11, weight: "bold" } },
+          ticks: { backdropColor: "transparent", color: "#64748b", stepSize: 20 },
+          suggestedMin: 0,
+          suggestedMax: 100
+        }
+      }
+    }
+  });
+}
+
+/* =====================================================================
+   SECTION 8: AI DECISION SUPPORT & INTERACTIVE DECISION TREE
+   ===================================================================== */
+const DECISION_TREES = {
+  FLOOD: {
+    title: "Hydrological Flood Early Warning & Dam Sluice Inundation Protocol",
+    levels: [
+      {
+        nodes: [
+          { type: "root-node", title: "PRIMARY SEED: Catchment Rain > 120mm/24h", desc: "Hydrological sensors indicate river gauge rising +10cm/hr toward warning level.", sop: "NDMA-SOP-FLD-ROOT" }
+        ]
+      },
+      {
+        nodes: [
+          { type: "action-monitor", title: "Branch A: Storage < 85%", desc: "Continue regulated reservoir holding; issue Stage-1 Advisory to riverside panchayats.", sop: "SOP-FLD-LVL1" },
+          { type: "action-high", title: "Branch B: Storage 85%–95%", desc: "Pre-alert SDRF platoons; open radial sluice gates at 15,000 cusecs; clear floodway.", sop: "SOP-FLD-LVL2" },
+          { type: "action-critical", title: "Branch C: Storage > 95% + Inflow Spike", desc: "Emergency mandatory discharge > 40,000 cusecs; immediate catastrophic inundation risk.", sop: "SOP-FLD-LVL3-RED" }
+        ]
+      },
+      {
+        nodes: [
+          { type: "action-monitor", title: "Routine Monitoring", desc: "Hourly gauge polling; maintain local communication nets.", sop: "DISPATCH-STBY" },
+          { type: "action-high", title: "Deploy SDRF & Evacuate Riparian Slums", desc: "Relocate 8,000 low-lying families; deploy 18 rescue boats.", sop: "DISPATCH-SDRF-02" },
+          { type: "action-critical", title: "Total Red Inundation Protocol", desc: "Enforce mandatory curfew; deploy 4 NDRF battalions; broadcast CAP siren.", sop: "EXEC-CAP-NDRF-RED" }
+        ]
+      }
+    ]
+  },
+  SEISMIC: {
+    title: "High Magnitude Seismic Rupture & P-Wave Interlock Protocol",
+    levels: [
+      {
+        nodes: [
+          { type: "root-node", title: "SEISMIC TRIGGER: Network Detection M ≥ 6.0", desc: "P-wave arrived at anchor seismometer; automated physics calculations armed.", sop: "NCS-EEW-TRIGGER" }
+        ]
+      },
+      {
+        nodes: [
+          { type: "action-critical", title: "If S-Wave Lead Time < 15 Seconds", desc: "Automate emergency trip on Metro trains, natural gas lines, and hospital backup generators.", sop: "INTERLOCK-FAST-01" },
+          { type: "action-high", title: "If S-Wave Lead Time 15–45 Seconds", desc: "Broadcast municipal siren; sound industrial evacuation horns; halt elevators.", sop: "INTERLOCK-MED-02" }
+        ]
+      },
+      {
+        nodes: [
+          { type: "action-critical", title: "Post-Quake USAR Deployment", desc: "Air-drop canine squads; drone SAR thermal sweeps; hospital triage mobilization.", sop: "NDRF-USAR-COLLAPSE" },
+          { type: "action-high", title: "Structural Integrity Assessment", desc: "Inspect dam abutments, railway bridges, and overpasses before resuming transit.", sop: "PWD-BRIDGE-CERT" }
+        ]
+      }
+    ]
+  },
+  CYCLONE: {
+    title: "Severe Cyclonic Coastal Landfall & Surge Protocol",
+    levels: [
+      {
+        nodes: [
+          { type: "root-node", title: "CYCLONE TRACK: Landfall Within 36 Hours", desc: "Doppler radar fixes center at 180km offshore; sustained winds > 105 km/h.", sop: "IMD-CYCLONE-ALERT" }
+        ]
+      },
+      {
+        nodes: [
+          { type: "action-high", title: "Tidal Surge Projection > 3.0 Meters", desc: "Order complete evacuation of 5km coastal strip; shift fishing craft to creek shelters.", sop: "SOP-SURGE-EVAC" },
+          { type: "action-monitor", title: "Tidal Surge Projection < 2.0 Meters", desc: "Fortify sea embankments; close harbor sea-gates; suspend port shipping.", sop: "SOP-PORT-SUSPEND" }
+        ]
+      },
+      {
+        nodes: [
+          { type: "action-critical", title: "Execute Total Coastal Quarantine", desc: "Power grid de-energized; emergency cyclone shelters armed with dry rations for 7 days.", sop: "SEOC-RED-SHELTER" },
+          { type: "action-high", title: "Post-Landfall Debris Clearing Units", desc: "Position tree-cutting saw teams and electrical pole restoration crews along NH-66.", sop: "DISPATCH-RESTORATION" }
+        ]
+      }
+    ]
+  },
+  LANDSLIDE: {
+    title: "Ghat Corridor Debris Flow & Mountain Damming Protocol",
+    levels: [
+      {
+        nodes: [
+          { type: "root-node", title: "LANDSLIDE PREDICTOR: Soil Moisture Saturation > 95%", desc: "InSAR radar confirms 30mm surface creep; intense torrential rain ongoing.", sop: "GSI-LANDSLIDE-RED" }
+        ]
+      },
+      {
+        nodes: [
+          { type: "action-critical", title: "Active Damming of River Creek", desc: "Slumped debris blocks mountain river; risk of catastrophic GLOF/breach surge.", sop: "SOP-DAM-BREACH" },
+          { type: "action-high", title: "Highway / Rail Embankment Blockage", desc: "Debris covers national freight corridor; twin tunnels obstructed.", sop: "SOP-CORRIDOR-CUT" }
+        ]
+      },
+      {
+        nodes: [
+          { type: "action-critical", title: "Emergency Spillway Controlled Blast", desc: "Deploy army engineering pioneers to excavate pilot trench preventing flash dam-burst.", sop: "ARMY-ENGR-EXCAV" },
+          { type: "action-high", title: "Dynamic Convoy Rerouting Active", desc: "Divert heavy traffic via designated ring routes; deploy heavy excavators.", sop: "NHAI-REROUTE-SYS" }
+        ]
+      }
+    ]
+  }
+};
+
+function renderDecisionTree(scenarioKey) {
+  const data = DECISION_TREES[scenarioKey] || DECISION_TREES.FLOOD;
+  const container = document.getElementById("dt-tree-render");
+  container.innerHTML = "";
+
+  data.levels.forEach((level, lvlIdx) => {
+    const row = document.createElement("div");
+    row.className = "dt-node-row";
+
+    level.nodes.forEach(node => {
+      const nodeEl = document.createElement("div");
+      nodeEl.className = `dt-node ${node.type}`;
+      nodeEl.innerHTML = `
+        <div class="dt-node-title">
+          <span>⚙️</span>
+          <span>${node.title}</span>
+        </div>
+        <div class="dt-node-desc">${node.desc}</div>
+        <div class="dt-node-sop">SOP: ${node.sop}</div>
+      `;
+      nodeEl.onclick = () => {
+        alert(`[TACTICAL NODE ACTIVATED]\nProtocol: ${node.title}\nSOP Guideline: ${node.sop}\nStandard NDMA Operating Procedure dispatches verified.`);
+      };
+      row.appendChild(nodeEl);
+    });
+
+    container.appendChild(row);
+
+    if (lvlIdx < data.levels.length - 1) {
+      const connector = document.createElement("div");
+      connector.className = "dt-connector-line";
+      container.appendChild(connector);
+    }
+  });
+}
+
+function exportDecisionTreePDF() {
+  window.print();
+}
+
+/* =====================================================================
+   SECTION 9: 4-DAY WEATHER FORECAST
+   ===================================================================== */
+async function fetch4DayForecast() {
+  const container = document.getElementById("forecast-cards-container");
+  container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--accent-cyan);">⚡ Querying /api/forecast/4day numerical weather prediction cluster...</div>`;
+
+  try {
+    const res = await fetch('/api/forecast/4day');
+    if (res.ok) {
+      const data = await res.json();
+      render4DayCards(data);
+      return;
+    }
+  } catch (err) {
+    console.warn("Backend /api/forecast/4day offline, synthesizing IMD/NWP simulation:", err);
+  }
+
+  // Realistic IMD GFS Ensemble 4-Day Projection
+  const today = new Date();
+  const daysData = [];
+
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+
+    const dayName = i === 0 ? "Today" : (i === 1 ? "Tomorrow" : d.toLocaleDateString('en-IN', { weekday: 'short' }));
+    const dateFormatted = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+
+    let tMax = 32 - i * 1.5;
+    let tMin = 23 - i * 0.8;
+    let rain = (i === 0 ? 84 : (i === 1 ? 142 : (i === 2 ? 110 : 45)));
+    let wind = (i === 0 ? 32 : (i === 1 ? 58 : (i === 2 ? 46 : 28)));
+    let risk = (i === 1 ? "SEVERE FLOOD RISK" : (i === 0 || i === 2 ? "ELEVATED RISK" : "MODERATE ADVISORY"));
+    let riskBg = (i === 1 ? "rgba(255,23,68,0.2)" : "rgba(255,145,0,0.2)");
+    let riskCol = (i === 1 ? "var(--accent-red)" : "var(--accent-orange)");
+    let icon = (rain > 100 ? "⛈️" : (rain > 50 ? "🌧️" : "🌦️"));
+
+    daysData.push({
+      dayName,
+      dateFormatted,
+      tMax: Math.round(tMax),
+      tMin: Math.round(tMin),
+      rain,
+      wind,
+      risk,
+      riskBg,
+      riskCol,
+      icon,
+      condition: (rain > 100 ? "Heavy Monsoon Cloudburst" : "Moderate to Heavy Showers")
+    });
+  }
+
+  render4DayCards(daysData);
+}
+
+function render4DayCards(days) {
+  const container = document.getElementById("forecast-cards-container");
+  container.innerHTML = "";
+
+  days.forEach(d => {
+    const card = document.createElement("div");
+    card.className = "forecast-card";
+    card.innerHTML = `
+      <div class="fc-date-line">
+        <h4>${d.dayName}</h4>
+        <span>${d.dateFormatted}</span>
+      </div>
+
+      <div class="fc-weather-icon-row">
+        <span class="fc-weather-icon">${d.icon}</span>
+        <div class="fc-temp-display">
+          <div class="current">${d.tMax}°C</div>
+          <div class="range">Min: ${d.tMin}°C | ${d.condition}</div>
+        </div>
+      </div>
+
+      <div class="fc-stats-table">
+        <div>🌧️ Rain: <b style="color:#fff;">${d.rain} mm</b></div>
+        <div>💨 Wind: <b style="color:#fff;">${d.wind} km/h</b></div>
+      </div>
+
+      <div class="fc-risk-badge" style="background:${d.riskBg}; color:${d.riskCol}; border:1px solid ${d.riskCol};">
+        ⚠️ ${d.risk}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  // Render Mini Hourly Precip Chart
+  const ctx = document.getElementById("forecastPrecipChart").getContext("2d");
+  if (chartForecastPrecip) chartForecastPrecip.destroy();
+
+  const labels = ["T+6h", "T+12h", "T+18h", "T+24h", "T+36h", "T+48h", "T+60h", "T+72h", "T+84h", "T+96h"];
+  const rainVals = [18, 32, 64, 88, 120, 142, 98, 62, 38, 20];
+
+  chartForecastPrecip = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Expected Precip (mm)",
+        data: rainVals,
+        backgroundColor: "rgba(0, 191, 255, 0.65)",
+        borderColor: "#00bfff",
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#94a3b8", font: { size: 10 } } },
+        y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#94a3b8", font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+/* =====================================================================
+   SECTION 10: PREDICTION CONFIDENCE DASHBOARD
+   ===================================================================== */
+function initConfidenceDashboard() {
+  // 5 Gauge Charts (Half Doughnuts)
+  const gauges = [
+    { id: "gaugeFlood", val: 94.2, color: "#00e676" },
+    { id: "gaugeSeismic", val: 88.5, color: "#00bfff" },
+    { id: "gaugeCyclone", val: 96.1, color: "#00e676" },
+    { id: "gaugeLandslide", val: 82.4, color: "#ffd700" },
+    { id: "gaugeHeatwave", val: 91.0, color: "#00e676" }
+  ];
+
+  gauges.forEach(g => {
+    const el = document.getElementById(g.id);
+    if (!el) return;
+    const ctx = el.getContext("2d");
+    gaugeCharts[g.id] = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        datasets: [{
+          data: [g.val, 100 - g.val],
+          backgroundColor: [g.color, "rgba(255,255,255,0.08)"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        rotation: -90,
+        circumference: 180,
+        cutout: "78%",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { tooltip: { enabled: false } }
+      }
+    });
+  });
+
+  // Ensemble Weights Donut
+  const ensEl = document.getElementById("ensembleDonutChart");
+  if (ensEl) {
+    const ctx = ensEl.getContext("2d");
+    chartEnsemble = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["LSTM-GRU", "PINN", "NWP GFS", "Random Forest", "Copernicus SAR"],
+        datasets: [{
+          data: [35, 25, 20, 12, 8],
+          backgroundColor: ["#00bfff", "#00e676", "#ffd700", "#ff9100", "#b388ff"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        cutout: "65%",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+}
+</script>
+
+</body>
+</html>

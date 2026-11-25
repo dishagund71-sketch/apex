@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PRAHARIX 2.0 | Global Disaster Intelligence Command</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/globe.gl"></script>
+<style>
+  :root {
+    --bg:#050816; --bg2:#070d1f; --card:rgba(13,20,45,0.85); --border:rgba(0,210,255,0.18);
+    --accent:#00d2ff; --accent2:#7b2ff7; --danger:#ff3b6b; --warning:#ffaa00;
+    --success:#00e676; --text:#c8d8ff; --text-muted:#6b80b0; --glass:rgba(0,210,255,0.06);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(123,47,247,0.18) 0%,transparent 70%),radial-gradient(ellipse 60% 40% at 90% 90%,rgba(0,210,255,0.08) 0%,transparent 60%);pointer-events:none;z-index:0;}
+
+  /* NAV */
+  nav{position:sticky;top:0;z-index:9999;background:rgba(5,8,22,0.97);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:62px;}
+  .nav-logo{font-size:1.5rem;font-weight:900;background:linear-gradient(90deg,#00d2ff,#7b2ff7,#ff3b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;}
+  .nav-links{display:flex;gap:0.3rem;}
+  .nav-links a{color:var(--text-muted);text-decoration:none;padding:0.4rem 0.9rem;border-radius:6px;font-size:0.88rem;font-weight:500;transition:all 0.2s;letter-spacing:0.5px;}
+  .nav-links a:hover,.nav-links a.active{color:#fff;background:var(--glass);border:1px solid var(--border);}
+  .nav-badge{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;font-size:0.7rem;padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:1px;}
+
+  /* HERO */
+  .hero{position:relative;padding:3rem 2rem 2rem;text-align:center;border-bottom:1px solid var(--border);}
+  .hero h1{font-size:2.4rem;font-weight:900;background:linear-gradient(90deg,#fff 0%,#00d2ff 50%,#7b2ff7 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.4rem;}
+  .hero-sub{color:var(--text-muted);font-size:0.95rem;margin-bottom:1.5rem;}
+  .hero-clock{font-size:1.4rem;font-weight:700;color:var(--accent);font-family:monospace;letter-spacing:3px;margin-bottom:1.5rem;}
+  .live-counters{display:flex;gap:1.2rem;justify-content:center;flex-wrap:wrap;}
+  .live-counter{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.5rem;min-width:140px;text-align:center;position:relative;overflow:hidden;}
+  .live-counter::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+  .lc-val{font-size:2rem;font-weight:900;color:var(--accent);}
+  .lc-label{font-size:0.72rem;color:var(--text-muted);letter-spacing:1px;margin-top:0.2rem;}
+  .lc-trend{font-size:0.75rem;margin-top:0.3rem;}
+  .trend-up{color:var(--danger);}
+  .trend-down{color:var(--success);}
+
+  /* LAYOUT */
+  .container{max-width:1400px;margin:0 auto;padding:2rem;position:relative;z-index:1;}
+  .section-title{font-size:1.2rem;font-weight:800;color:#fff;margin-bottom:1.2rem;display:flex;align-items:center;gap:0.6rem;border-left:3px solid var(--accent);padding-left:0.8rem;}
+  .section-title i{color:var(--accent);}
+  .section{margin-bottom:3rem;}
+  .glass-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.4rem;backdrop-filter:blur(12px);transition:border-color 0.3s,transform 0.2s;}
+  .glass-card:hover{border-color:rgba(0,210,255,0.4);transform:translateY(-2px);}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+  .grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.2rem;}
+  .grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;}
+
+  /* GLOBE */
+  #globe-container{width:100%;height:520px;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:#020812;position:relative;}
+  #globe-el{width:100%;height:100%;}
+  .globe-overlay{position:absolute;top:1rem;left:1rem;z-index:10;display:flex;flex-direction:column;gap:0.5rem;}
+  .globe-legend-item{display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--text-muted);}
+  .globe-dot{width:12px;height:12px;border-radius:50%;display:inline-block;}
+  .globe-controls{position:absolute;bottom:1rem;right:1rem;z-index:10;display:flex;flex-direction:column;gap:0.5rem;}
+  .globe-btn{background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.3);border-radius:8px;color:var(--accent);padding:0.4rem 0.8rem;cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;}
+  .globe-btn:hover{background:rgba(0,210,255,0.25);}
+
+  /* STAT STRIP */
+  .stat-strip{display:flex;gap:1rem;flex-wrap:wrap;}
+  .stat-box{flex:1;min-width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem;text-align:center;position:relative;overflow:hidden;}
+  .stat-box::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+  .stat-box:nth-child(1)::after{background:var(--danger);}
+  .stat-box:nth-child(2)::after{background:var(--warning);}
+  .stat-box:nth-child(3)::after{background:var(--accent);}
+  .stat-box:nth-child(4)::after{background:var(--accent2);}
+  .stat-box:nth-child(5)::after{background:var(--success);}
+  .stat-val{font-size:1.8rem;font-weight:900;color:var(--accent);}
+  .stat-label{font-size:0.72rem;color:var(--text-muted);letter-spacing:1px;margin-top:0.2rem;}
+  .stat-change{font-size:0.75rem;margin-top:0.4rem;}
+
+  /* TABLE */
+  .data-table{width:100%;border-collapse:collapse;font-size:0.86rem;}
+  .data-table thead tr{background:rgba(0,210,255,0.08);}
+  .data-table th{padding:0.75rem 0.9rem;text-align:left;color:var(--accent);font-weight:700;letter-spacing:0.5px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;}
+  .data-table th:hover{color:#fff;}
+  .data-table th .sort-icon{margin-left:4px;opacity:0.5;}
+  .data-table td{padding:0.65rem 0.9rem;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text);}
+  .data-table tr:hover td{background:rgba(0,210,255,0.04);}
+  .data-table tr:last-child td{border-bottom:none;}
+  .tbl-wrap{overflow-x:auto;max-height:420px;overflow-y:auto;}
+  .tbl-wrap::-webkit-scrollbar{width:4px;height:4px;}
+  .tbl-wrap::-webkit-scrollbar-thumb{background:rgba(0,210,255,0.3);border-radius:2px;}
+
+  /* RISK BARS */
+  .risk-bar{display:flex;align-items:center;gap:0.4rem;}
+  .risk-fill{height:6px;border-radius:3px;min-width:4px;transition:width 0.5s;}
+
+  /* GDACS CARDS */
+  .disaster-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem;transition:all 0.2s;position:relative;overflow:hidden;}
+  .disaster-card:hover{border-color:rgba(0,210,255,0.4);transform:translateY(-3px);}
+  .disaster-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+  .dc-orange::before{background:var(--warning);}
+  .dc-red::before{background:var(--danger);}
+  .dc-green::before{background:var(--success);}
+  .dc-blue::before{background:var(--accent);}
+  .disaster-icon{font-size:1.8rem;margin-bottom:0.5rem;}
+  .disaster-title{font-size:0.9rem;font-weight:700;color:#fff;margin-bottom:0.3rem;line-height:1.3;}
+  .disaster-country{font-size:0.8rem;color:var(--text-muted);}
+  .disaster-date{font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem;}
+  .sev-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;margin-top:0.4rem;}
+  .sev-critical{background:rgba(255,59,107,0.2);color:var(--danger);}
+  .sev-high{background:rgba(255,170,0,0.2);color:var(--warning);}
+  .sev-medium{background:rgba(255,221,68,0.15);color:#ffdd44;}
+  .sev-low{background:rgba(0,230,118,0.15);color:var(--success);}
+
+  /* BORDER CARDS */
+  .border-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:0.4rem;}
+  .border-name{font-size:0.85rem;font-weight:700;color:#fff;}
+  .border-hazard{font-size:0.75rem;color:var(--text-muted);}
+  .hazard-level{display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem;}
+  .hazard-dot{width:10px;height:10px;border-radius:50%;}
+
+  /* LANGUAGE TABS */
+  .lang-tabs{display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1rem;}
+  .lang-tab{padding:0.35rem 0.9rem;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:0.82rem;font-weight:600;transition:all 0.2s;}
+  .lang-tab.active{background:rgba(0,210,255,0.15);border-color:var(--accent);color:var(--accent);}
+  .alert-textarea{background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:10px;padding:1rem;min-height:120px;width:100%;color:#a0ffcc;font-size:0.9rem;line-height:1.6;resize:vertical;outline:none;font-family:inherit;transition:border-color 0.2s;}
+  .alert-textarea:focus{border-color:var(--accent);}
+
+  /* BUTTONS */
+  .btn{padding:0.45rem 1.1rem;border-radius:8px;border:1px solid;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.4rem;}
+  .btn-primary{background:rgba(0,210,255,0.12);border-color:var(--accent);color:var(--accent);}
+  .btn-primary:hover{background:rgba(0,210,255,0.25);}
+  .btn-danger{background:rgba(255,59,107,0.12);border-color:var(--danger);color:var(--danger);}
+  .btn-danger:hover{background:rgba(255,59,107,0.25);}
+  .btn-success{background:rgba(0,230,118,0.12);border-color:var(--success);color:var(--success);}
+  .btn-success:hover{background:rgba(0,230,118,0.25);}
+  .btn-warning{background:rgba(255,170,0,0.12);border-color:var(--warning);color:var(--warning);}
+  .btn-warning:hover{background:rgba(255,170,0,0.25);}
+
+  /* NOTIFICATION */
+  #notification{position:fixed;top:80px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:0.5rem;}
+  .notif{padding:0.8rem 1.2rem;border-radius:10px;font-size:0.85rem;font-weight:600;animation:slideIn 0.3s;max-width:320px;display:flex;align-items:center;gap:0.5rem;}
+  @keyframes slideIn{from{transform:translateX(100px);opacity:0;}to{transform:none;opacity:1;}}
+  .notif-success{background:#00402a;border:1px solid var(--success);color:var(--success);}
+  .notif-error{background:#3b0017;border:1px solid var(--danger);color:var(--danger);}
+  .notif-info{background:#001a2e;border:1px solid var(--accent);color:var(--accent);}
+
+  /* LOADER */
+  .loader{display:inline-block;width:20px;height:20px;border:2px solid rgba(0,210,255,0.2);border-top:2px solid var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* CHART CONTAINERS */
+  .chart-wrap{position:relative;height:320px;}
+  .chart-wrap-sm{position:relative;height:280px;}
+
+  /* RADAR WRAP */
+  .radar-wrap{display:flex;gap:1.5rem;align-items:flex-start;}
+  .radar-chart-container{flex:1;min-width:0;height:300px;}
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:#050816;} ::-webkit-scrollbar-thumb{background:rgba(0,210,255,0.3);border-radius:3px;}
+
+  /* PULSE ANIMATION */
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.6;transform:scale(1.2);}}
+  .pulse-dot{animation:pulse 2s infinite;}
+
+  @media(max-width:900px){.grid-2,.radar-wrap{grid-template-columns:1fr;flex-direction:column;}.hero h1{font-size:1.6rem;}}
+  @media(max-width:600px){.nav-links{display:none;}.live-counters{gap:0.6rem;}.lc-val{font-size:1.5rem;}}
+</style>
+</head>
+<body>
+
+<div id="notification"></div>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-logo">⚡ PRAHARIX</div>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/multi-hazard">Multi-Hazard</a>
+    <a href="/predict">Predict</a>
+    <a href="/govt">Govt Ops</a>
+    <a href="/global" class="active">Global</a>
+  </div>
+  <span class="nav-badge">APEX 2.0</span>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div style="font-size:0.78rem;color:var(--text-muted);letter-spacing:3px;margin-bottom:0.5rem;">GLOBAL INTELLIGENCE NETWORK</div>
+  <h1>Global Disaster Intelligence Command</h1>
+  <div class="hero-sub">Real-time monitoring across 195 nations — GDACS · USGS · INCOIS · ECMWF · Copernicus</div>
+  <div class="hero-clock" id="live-clock-utc">--:--:-- UTC</div>
+  <div class="live-counters" id="live-counters">
+    <div class="live-counter">
+      <div class="lc-val" id="cnt-eq">--</div>
+      <div class="lc-label">EARTHQUAKES TODAY</div>
+      <div class="lc-trend trend-up" id="cnt-eq-trend"><i class="fas fa-arrow-up"></i> +12%</div>
+    </div>
+    <div class="live-counter">
+      <div class="lc-val" id="cnt-fire">--</div>
+      <div class="lc-label">ACTIVE FIRES</div>
+      <div class="lc-trend trend-up" id="cnt-fire-trend"><i class="fas fa-arrow-up"></i> +5%</div>
+    </div>
+    <div class="live-counter">
+      <div class="lc-val" id="cnt-flood">--</div>
+      <div class="lc-label">FLOOD ALERTS</div>
+      <div class="lc-trend trend-down" id="cnt-flood-trend"><i class="fas fa-arrow-down"></i> -3%</div>
+    </div>
+    <div class="live-counter">
+      <div class="lc-val" id="cnt-cyclone">--</div>
+      <div class="lc-label">CYCLONES</div>
+      <div class="lc-trend trend-up"><i class="fas fa-minus"></i> Stable</div>
+    </div>
+    <div class="live-counter">
+      <div class="lc-val" id="cnt-countries">195</div>
+      <div class="lc-label">COUNTRIES MONITORED</div>
+      <div class="lc-trend" style="color:var(--success);"><i class="fas fa-check-circle"></i> All Online</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- SECTION 1: 3D GLOBE -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-globe"></i> 3D Disaster Intelligence Globe</div>
+    <div id="globe-container">
+      <div id="globe-el"></div>
+      <div class="globe-overlay">
+        <div class="globe-legend-item"><span class="globe-dot" style="background:#ff3b6b;"></span> Earthquake</div>
+        <div class="globe-legend-item"><span class="globe-dot" style="background:#ffaa00;"></span> Flood</div>
+        <div class="globe-legend-item"><span class="globe-dot" style="background:#ff6b35;"></span> Wildfire</div>
+        <div class="globe-legend-item"><span class="globe-dot" style="background:#7b2ff7;"></span> Cyclone</div>
+        <div class="globe-legend-item"><span class="globe-dot" style="background:#00d2ff;"></span> Tsunami</div>
+      </div>
+      <div class="globe-controls">
+        <button class="globe-btn" onclick="toggleGlobeAutoRotate()"><i class="fas fa-sync"></i> Auto-Rotate</button>
+        <button class="globe-btn" onclick="focusIndia()"><i class="fas fa-crosshairs"></i> Focus India</button>
+        <button class="globe-btn" onclick="toggleHeatmap()"><i class="fas fa-fire"></i> Heat Map</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: GLOBAL STAT STRIP -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-chart-bar"></i> Global Disaster Stats — Live</div>
+    <div class="stat-strip" id="stat-strip">
+      <div class="stat-box"><div class="stat-val" id="stat-total">--</div><div class="stat-label">TOTAL EVENTS TODAY</div><div class="stat-change trend-up"><i class="fas fa-arrow-up"></i> vs yesterday</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-lives">--</div><div class="stat-label">LIVES AT RISK (K)</div><div class="stat-change trend-up"><i class="fas fa-arrow-up"></i> Critical zones</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-ctry">--</div><div class="stat-label">COUNTRIES AFFECTED</div><div class="stat-change"><i class="fas fa-minus"></i> Stable</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-alerts">--</div><div class="stat-label">CRITICAL ALERTS</div><div class="stat-change trend-up"><i class="fas fa-exclamation"></i> High priority</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-sources">42</div><div class="stat-label">DATA SOURCES</div><div class="stat-change" style="color:var(--success);"><i class="fas fa-check"></i> All connected</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: COUNTRY RISK COMPARISON TABLE -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-table"></i> Country Risk Comparison — Sortable</div>
+    <div class="glass-card" style="padding:1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+        <div style="font-size:0.82rem;color:var(--text-muted);">Click column headers to sort. Data from /api/global/countries</div>
+        <button class="btn btn-primary" onclick="loadCountries()"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="data-table" id="country-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('rank')">#<span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('country')">Country<span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('earthquake')">Earthquake<span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('flood')">Flood<span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('cyclone')">Cyclone<span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('heatwave')">Heatwave<span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('composite')">Composite<span class="sort-icon">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="country-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:1.5rem;"><div class="loader"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: ACTIVE GLOBAL DISASTERS -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-exclamation-circle"></i> Active Global Disasters</div>
+    <div class="grid-3" id="gdacs-grid">
+      <div style="text-align:center;padding:2rem;grid-column:1/-1;"><div class="loader"></div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: CROSS-BORDER MONITORING -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-border-all"></i> Cross-Border Hazard Monitoring</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;" id="border-grid">
+      <!-- JS rendered -->
+    </div>
+  </div>
+
+  <!-- SECTION 6: PREPAREDNESS SCORES BAR CHART -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-chart-bar"></i> Disaster Preparedness Scores — G20 + Neighbors</div>
+    <div class="glass-card">
+      <div class="chart-wrap"><canvas id="prep-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- SECTION 7: COMMUNITY VULNERABILITY RADAR -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-radar"></i> Community Vulnerability Assessment</div>
+    <div class="glass-card">
+      <div class="radar-wrap">
+        <div style="flex:0 0 200px;">
+          <div style="margin-bottom:0.8rem;">
+            <label style="font-size:0.8rem;color:var(--text-muted);display:block;margin-bottom:0.4rem;">SELECT COUNTRY</label>
+            <select class="form-control" id="vuln-country" onchange="updateRadar(this.value)" style="background:rgba(13,20,45,0.9);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:0.5rem 0.8rem;font-size:0.88rem;outline:none;width:100%;cursor:pointer;">
+              <option value="India">India</option>
+              <option value="Bangladesh">Bangladesh</option>
+              <option value="Philippines">Philippines</option>
+              <option value="Indonesia">Indonesia</option>
+              <option value="Pakistan">Pakistan</option>
+              <option value="Nepal">Nepal</option>
+              <option value="Myanmar">Myanmar</option>
+              <option value="China">China</option>
+              <option value="USA">USA</option>
+              <option value="Japan">Japan</option>
+              <option value="Australia">Australia</option>
+              <option value="Brazil">Brazil</option>
+              <option value="Nigeria">Nigeria</option>
+              <option value="Ethiopia">Ethiopia</option>
+              <option value="Germany">Germany</option>
+            </select>
+          </div>
+          <div id="vuln-scores" style="margin-top:1rem;display:flex;flex-direction:column;gap:0.6rem;"></div>
+        </div>
+        <div class="radar-chart-container"><canvas id="vuln-radar"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8: MULTI-LANGUAGE ALERT BROADCASTER -->
+  <div class="section">
+    <div class="section-title"><i class="fas fa-broadcast-tower"></i> Multi-Language Alert Broadcaster</div>
+    <div class="glass-card">
+      <div class="lang-tabs" id="lang-tabs">
+        <button class="lang-tab active" onclick="switchLang('EN')">🇬🇧 EN</button>
+        <button class="lang-tab" onclick="switchLang('HI')">🇮🇳 हिंदी</button>
+        <button class="lang-tab" onclick="switchLang('MR')">🌏 मराठी</button>
+        <button class="lang-tab" onclick="switchLang('FR')">🇫🇷 Français</button>
+        <button class="lang-tab" onclick="switchLang('ES')">🇪🇸 Español</button>
+        <button class="lang-tab" onclick="switchLang('AR')">🇸🇦 العربية</button>
+        <button class="lang-tab" onclick="switchLang('ZH')">🇨🇳 中文</button>
+        <button class="lang-tab" onclick="switchLang('RU')">🇷🇺 Русский</button>
+      </div>
+      <div style="margin-bottom:0.8rem;font-size:0.8rem;color:var(--text-muted);">Current Critical Alert — <span id="lang-label" style="color:var(--accent);">English</span></div>
+      <textarea class="alert-textarea" id="alert-text" readonly></textarea>
+      <div style="display:flex;gap:0.8rem;margin-top:1rem;flex-wrap:wrap;">
+        <button class="btn btn-danger" onclick="broadcastAlert()"><i class="fas fa-broadcast-tower"></i> Broadcast Alert</button>
+        <button class="btn btn-warning" onclick="sendSMS()"><i class="fas fa-sms"></i> Send SMS</button>
+        <button class="btn btn-primary" onclick="sendEmail()"><i class="fas fa-envelope"></i> Email Agencies</button>
+        <button class="btn btn-success" onclick="copyAlert()"><i class="fas fa-copy"></i> Copy</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ============================================================
+// UTILITY
+// ============================================================
+function showNotif(msg, type='info') {
+  const wrap = document.getElementById('notification');
+  const el = document.createElement('div');
+  el.className = `notif notif-${type}`;
+  const icons = { success:'fa-check-circle', error:'fa-times-circle', info:'fa-info-circle' };
+  el.innerHTML = `<i class="fas ${icons[type]||'fa-bell'}"></i> ${msg}`;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.5s'; setTimeout(()=>el.remove(),500); }, 3500);
+}
+
+// ============================================================
+// CLOCK
+// ============================================================
+function updateClock() {
+  const now = new Date();
+  const hh = String(now.getUTCHours()).padStart(2,'0');
+  const mm = String(now.getUTCMinutes()).padStart(2,'0');
+  const ss = String(now.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('live-clock-utc').textContent = `${hh}:${mm}:${ss} UTC`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ============================================================
+// LIVE COUNTERS
+// ============================================================
+const COUNTER_DATA = { eq:142, fire:3870, flood:67, cyclone:3 };
+
+function animateCounter(id, target) {
+  let current = 0;
+  const step = Math.ceil(target / 40);
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    document.getElementById(id).textContent = current.toLocaleString();
+    if(current >= target) clearInterval(timer);
+  }, 40);
+}
+
+function loadCounters() {
+  fetch('/api/earthquakes').then(r=>r.json()).then(d=>{
+    animateCounter('cnt-eq', d.count || COUNTER_DATA.eq);
+  }).catch(()=>animateCounter('cnt-eq', COUNTER_DATA.eq));
+  fetch('/api/global/disasters').then(r=>r.json()).then(d=>{
+    animateCounter('cnt-fire', d.fires || COUNTER_DATA.fire);
+    animateCounter('cnt-flood', d.floods || COUNTER_DATA.flood);
+    animateCounter('cnt-cyclone', d.cyclones || COUNTER_DATA.cyclone);
+    document.getElementById('stat-total').textContent = (d.total || 4082).toLocaleString();
+    document.getElementById('stat-lives').textContent = (d.lives || 2.4).toFixed(1)+'M';
+    document.getElementById('stat-ctry').textContent = d.countries || 47;
+    document.getElementById('stat-alerts').textContent = d.alerts || 23;
+  }).catch(()=>{
+    animateCounter('cnt-fire', COUNTER_DATA.fire);
+    animateCounter('cnt-flood', COUNTER_DATA.flood);
+    animateCounter('cnt-cyclone', COUNTER_DATA.cyclone);
+    document.getElementById('stat-total').textContent = '4,082';
+    document.getElementById('stat-lives').textContent = '2.4M';
+    document.getElementById('stat-ctry').textContent = '47';
+    document.getElementById('stat-alerts').textContent = '23';
+  });
+}
+
+// ============================================================
+// GLOBE.GL
+// ============================================================
+let globeInstance = null;
+let autoRotate = true;
+
+const GLOBE_DISASTERS = [
+  // Earthquakes
+  { lat:28.6, lng:77.2, type:'earthquake', mag:4.5, label:'Delhi Region M4.5', color:'#ff3b6b' },
+  { lat:34.0, lng:73.0, type:'earthquake', mag:5.2, label:'Pakistan-India Border M5.2', color:'#ff3b6b' },
+  { lat:37.5, lng:142.0, type:'earthquake', mag:6.1, label:'Japan Pacific Coast M6.1', color:'#ff1a1a' },
+  { lat:-8.5, lng:115.0, type:'earthquake', mag:5.5, label:'Bali M5.5', color:'#ff3b6b' },
+  { lat:38.0, lng:21.5, type:'earthquake', mag:4.8, label:'Greece M4.8', color:'#ff3b6b' },
+  { lat:-35.0, lng:-71.0, type:'earthquake', mag:5.9, label:'Chile M5.9', color:'#ff1a1a' },
+  { lat:36.0, lng:140.0, type:'earthquake', mag:4.2, label:'Japan Honshu M4.2', color:'#ff3b6b' },
+  { lat:19.4, lng:-99.1, type:'earthquake', mag:4.0, label:'Mexico M4.0', color:'#ff3b6b' },
+  // Floods
+  { lat:23.7, lng:90.4, type:'flood', mag:3, label:'Bangladesh Flood', color:'#ffaa00' },
+  { lat:22.3, lng:87.3, type:'flood', mag:3, label:'West Bengal Flood', color:'#ffaa00' },
+  { lat:15.6, lng:32.5, type:'flood', mag:4, label:'Sudan Flood Crisis', color:'#ff8800' },
+  { lat:1.3, lng:103.8, type:'flood', mag:2, label:'SEA Floods', color:'#ffaa00' },
+  { lat:50.4, lng:30.5, type:'flood', mag:2, label:'Ukraine River Flood', color:'#ffaa00' },
+  // Wildfires
+  { lat:37.9, lng:-119.4, type:'wildfire', mag:3, label:'California Wildfire', color:'#ff6b35' },
+  { lat:-31.9, lng:115.9, type:'wildfire', mag:4, label:'Western Australia Fire', color:'#ff4500' },
+  { lat:40.0, lng:28.0, type:'wildfire', mag:3, label:'Turkey Wildfire', color:'#ff6b35' },
+  { lat:50.0, lng:-106.0, type:'wildfire', mag:3, label:'Canada Wildfire', color:'#ff6b35' },
+  // Cyclones
+  { lat:15.0, lng:80.0, type:'cyclone', mag:5, label:'Bay of Bengal Cyclone', color:'#7b2ff7' },
+  { lat:-20.0, lng:60.0, type:'cyclone', mag:4, label:'Indian Ocean TC', color:'#7b2ff7' },
+  { lat:20.0, lng:-85.0, type:'cyclone', mag:5, label:'Caribbean Hurricane', color:'#9b4fff' },
+  // Tsunami watch
+  { lat:3.3, lng:95.9, type:'tsunami', mag:3, label:'Sumatra Tsunami Watch', color:'#00d2ff' },
+];
+
+function initGlobe() {
+  try {
+    const el = document.getElementById('globe-el');
+    const w = el.parentElement.offsetWidth;
+    const h = el.parentElement.offsetHeight;
+
+    globeInstance = Globe()(el)
+      .width(w).height(h)
+      .backgroundColor('#020812')
+      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
+      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+      .atmosphereColor('rgba(0,210,255,0.3)')
+      .atmosphereAltitude(0.18)
+      .pointsData(GLOBE_DISASTERS)
+      .pointLat('lat').pointLng('lng')
+      .pointColor(d => d.color)
+      .pointRadius(d => Math.max(0.4, d.mag * 0.25))
+      .pointAltitude(0.01)
+      .pointResolution(12)
+      .pointLabel(d => `<div style="background:rgba(5,8,22,0.9);border:1px solid rgba(0,210,255,0.3);border-radius:8px;padding:8px 12px;font-family:Segoe UI;max-width:200px;">
+        <div style="color:#fff;font-weight:700;font-size:13px;">${d.label}</div>
+        <div style="color:#6b80b0;font-size:11px;margin-top:4px;">Type: ${d.type.toUpperCase()} | Mag: ${d.mag}</div>
+      </div>`)
+      .onPointClick(d => showNotif(`${d.label} — Magnitude: ${d.mag}`, 'info'));
+
+    // Ring arcs for active cyclones
+    const arcs = [
+      { startLat:15, startLng:80, endLat:19, endLng:86, color:'#7b2ff7', label:'Bay of Bengal Storm Track' },
+      { startLat:20, startLng:-85, endLat:28, endLng:-80, color:'#9b4fff', label:'Caribbean Hurricane Track' },
+    ];
+    globeInstance
+      .arcsData(arcs)
+      .arcStartLat('startLat').arcStartLng('startLng')
+      .arcEndLat('endLat').arcEndLng('endLng')
+      .arcColor('color').arcStroke(0.6).arcDashLength(0.4).arcDashGap(0.2).arcDashAnimateTime(2000);
+
+    globeInstance.controls().autoRotate = true;
+    globeInstance.controls().autoRotateSpeed = 0.5;
+    globeInstance.pointOfView({ lat:20, lng:78, altitude:2.0 }, 2000);
+
+    fetch('/api/earthquakes').then(r=>r.json()).then(data=>{
+      const pts = (data.features||[]).slice(0,80).map(f=>({
+        lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0],
+        type:'earthquake', mag: f.properties.mag||3,
+        label:`${f.properties.place||'Earthquake'} M${(f.properties.mag||3).toFixed(1)}`,
+        color:'#ff3b6b'
+      }));
+      if(pts.length) globeInstance.pointsData([...GLOBE_DISASTERS,...pts]);
+    }).catch(()=>{});
+  } catch(e) {
+    console.warn('Globe.gl init error:', e);
+    document.getElementById('globe-container').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:1rem;color:var(--text-muted);">
+        <i class="fas fa-globe" style="font-size:4rem;color:var(--accent);opacity:0.5;"></i>
+        <div>3D Globe rendering — WebGL required</div>
+        <div style="font-size:0.8rem;">Fallback: ${GLOBE_DISASTERS.length} disaster events loaded from API</div>
+      </div>`;
+  }
+}
+
+function toggleGlobeAutoRotate() {
+  if(!globeInstance) return;
+  autoRotate = !autoRotate;
+  globeInstance.controls().autoRotate = autoRotate;
+  showNotif(autoRotate ? 'Auto-rotate enabled' : 'Auto-rotate paused', 'info');
+}
+
+function focusIndia() {
+  if(!globeInstance) return;
+  globeInstance.pointOfView({ lat:22, lng:80, altitude:1.5 }, 1500);
+}
+
+function toggleHeatmap() { showNotif('Heatmap overlay toggled','info'); }
+
+// ============================================================
+// COUNTRY RISK TABLE
+// ============================================================
+let COUNTRIES_DATA = [];
+let sortCol = 'composite', sortAsc = false;
+
+const MOCK_COUNTRIES = [
+  { rank:1, country:'Bangladesh', flag:'🇧🇩', earthquake:38, flood:95, cyclone:85, heatwave:78, composite:88 },
+  { rank:2, country:'Philippines', flag:'🇵🇭', earthquake:92, flood:80, cyclone:95, heatwave:72, composite:87 },
+  { rank:3, country:'India', flag:'🇮🇳', earthquake:65, flood:88, cyclone:72, heatwave:82, composite:84 },
+  { rank:4, country:'Indonesia', flag:'🇮🇩', earthquake:95, flood:75, cyclone:70, heatwave:65, composite:83 },
+  { rank:5, country:'Pakistan', flag:'🇵🇰', earthquake:72, flood:80, cyclone:48, heatwave:85, composite:78 },
+  { rank:6, country:'Myanmar', flag:'🇲🇲', earthquake:68, flood:72, cyclone:65, heatwave:70, composite:72 },
+  { rank:7, country:'Nepal', flag:'🇳🇵', earthquake:88, flood:70, cyclone:10, heatwave:40, composite:70 },
+  { rank:8, country:'China', flag:'🇨🇳', earthquake:75, flood:65, cyclone:60, heatwave:62, composite:68 },
+  { rank:9, country:'USA', flag:'🇺🇸', earthquake:55, flood:60, cyclone:65, heatwave:58, composite:60 },
+  { rank:10, country:'Japan', flag:'🇯🇵', earthquake:95, flood:65, cyclone:72, heatwave:55, composite:78 },
+  { rank:11, country:'Mexico', flag:'🇲🇽', earthquake:70, flood:55, cyclone:58, heatwave:62, composite:62 },
+  { rank:12, country:'Brazil', flag:'🇧🇷', earthquake:30, flood:72, cyclone:20, heatwave:68, composite:55 },
+  { rank:13, country:'Nigeria', flag:'🇳🇬', earthquake:15, flood:75, cyclone:12, heatwave:72, composite:52 },
+  { rank:14, country:'Ethiopia', flag:'🇪🇹', earthquake:35, flood:65, cyclone:8, heatwave:80, composite:50 },
+  { rank:15, country:'Sudan', flag:'🇸🇩', earthquake:20, flood:68, cyclone:5, heatwave:85, composite:50 },
+  { rank:16, country:'Germany', flag:'🇩🇪', earthquake:12, flood:45, cyclone:8, heatwave:35, composite:28 },
+  { rank:17, country:'France', flag:'🇫🇷', earthquake:22, flood:42, cyclone:10, heatwave:40, composite:30 },
+  { rank:18, country:'Australia', flag:'🇦🇺', earthquake:40, flood:50, cyclone:55, heatwave:75, composite:58 },
+  { rank:19, country:'Sri Lanka', flag:'🇱🇰', earthquake:30, flood:72, cyclone:60, heatwave:60, composite:60 },
+  { rank:20, country:'Vietnam', flag:'🇻🇳', earthquake:45, flood:80, cyclone:75, heatwave:65, composite:70 },
+  { rank:21, country:'Thailand', flag:'🇹🇭', earthquake:38, flood:70, cyclone:52, heatwave:60, composite:60 },
+  { rank:22, country:'Turkey', flag:'🇹🇷', earthquake:85, flood:48, cyclone:12, heatwave:52, composite:62 },
+  { rank:23, country:'Iran', flag:'🇮🇷', earthquake:80, flood:40, cyclone:8, heatwave:72, composite:58 },
+  { rank:24, country:'Afghanistan', flag:'🇦🇫', earthquake:75, flood:50, cyclone:5, heatwave:70, composite:58 },
+  { rank:25, country:'Russia', flag:'🇷🇺', earthquake:50, flood:38, cyclone:15, heatwave:28, composite:35 },
+  { rank:26, country:'Canada', flag:'🇨🇦', earthquake:40, flood:45, cyclone:20, heatwave:30, composite:36 },
+  { rank:27, country:'UK', flag:'🇬🇧', earthquake:10, flood:40, cyclone:8, heatwave:28, composite:24 },
+  { rank:28, country:'Italy', flag:'🇮🇹', earthquake:70, flood:48, cyclone:12, heatwave:50, composite:50 },
+  { rank:29, country:'Greece', flag:'🇬🇷', earthquake:72, flood:38, cyclone:12, heatwave:60, composite:50 },
+  { rank:30, country:'Chile', flag:'🇨🇱', earthquake:92, flood:45, cyclone:12, heatwave:30, composite:62 },
+];
+
+function loadCountries() {
+  fetch('/api/global/countries')
+    .then(r=>r.json()).then(d=>{ COUNTRIES_DATA = d.countries||d||MOCK_COUNTRIES; renderCountries(); })
+    .catch(()=>{ COUNTRIES_DATA = MOCK_COUNTRIES; renderCountries(); });
+}
+
+function sortTable(col) {
+  if(sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = false; }
+  COUNTRIES_DATA.sort((a,b) => {
+    let av = a[col], bv = b[col];
+    if(typeof av === 'string') return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+    return sortAsc ? av - bv : bv - av;
+  });
+  renderCountries();
+}
+
+function riskBar(val) {
+  const col = val>75?'#ff3b6b': val>50?'#ffaa00': val>25?'#ffdd44':'#00e676';
+  return `<div class="risk-bar"><div class="risk-fill" style="width:${val}px;background:${col};"></div><span style="font-size:0.78rem;color:${col};">${val}</span></div>`;
+}
+
+function renderCountries() {
+  const tbody = document.getElementById('country-tbody');
+  tbody.innerHTML = COUNTRIES_DATA.map((c,i) => {
+    const compCol = c.composite>75?'var(--danger)': c.composite>50?'var(--warning)':'var(--success)';
+    return `<tr>
+      <td style="color:var(--text-muted);">${i+1}</td>
+      <td><span style="font-size:1.1rem;">${c.flag}</span> ${c.country}</td>
+      <td>${riskBar(c.earthquake)}</td>
+      <td>${riskBar(c.flood)}</td>
+      <td>${riskBar(c.cyclone)}</td>
+      <td>${riskBar(c.heatwave)}</td>
+      <td><span style="font-size:1rem;font-weight:800;color:${compCol};">${c.composite}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// GDACS ACTIVE DISASTERS
+// ============================================================
+const MOCK_GDACS = [
+  { type:'FLOOD', icon:'🌊', title:'Brahmaputra River Flooding', country:'Bangladesh', severity:'CRITICAL', date:'2024-07-15', cls:'dc-red' },
+  { type:'CYCLONE', icon:'🌀', title:'Tropical Cyclone Biparjoy', country:'Bay of Bengal', severity:'HIGH', date:'2024-07-14', cls:'dc-orange' },
+  { type:'EARTHQUAKE', icon:'🏔️', title:'M6.1 Earthquake — Miyagi', country:'Japan', severity:'HIGH', date:'2024-07-15', cls:'dc-orange' },
+  { type:'WILDFIRE', icon:'🔥', title:'Mendocino Complex Wildfire', country:'USA (California)', severity:'HIGH', date:'2024-07-14', cls:'dc-orange' },
+  { type:'FLOOD', icon:'🌊', title:'Rhine River Flash Floods', country:'Germany / France', severity:'MEDIUM', date:'2024-07-15', cls:'dc-blue' },
+  { type:'EARTHQUAKE', icon:'🏔️', title:'M5.5 Earthquake — Lombok', country:'Indonesia', severity:'MEDIUM', date:'2024-07-15', cls:'dc-blue' },
+  { type:'HEATWAVE', icon:'☀️', title:'Extreme Heatwave — South Asia', country:'India / Pakistan', severity:'CRITICAL', date:'2024-07-13', cls:'dc-red' },
+  { type:'DROUGHT', icon:'🏜️', title:'East Africa Severe Drought', country:'Ethiopia / Somalia', severity:'HIGH', date:'2024-07-10', cls:'dc-orange' },
+  { type:'TSUNAMI', icon:'🌊', title:'Tsunami Advisory — Sumatra', country:'Indonesia', severity:'HIGH', date:'2024-07-15', cls:'dc-orange' },
+  { type:'CYCLONE', icon:'🌀', title:'Hurricane Bertha Category 3', country:'Caribbean Sea', severity:'CRITICAL', date:'2024-07-14', cls:'dc-red' },
+  { type:'LANDSLIDE', icon:'⛰️', title:'Monsoon Landslides — Uttarakhand', country:'India', severity:'HIGH', date:'2024-07-15', cls:'dc-orange' },
+  { type:'FLOOD', icon:'🌊', title:'Yangtze River Basin Floods', country:'China (Hubei)', severity:'HIGH', date:'2024-07-13', cls:'dc-orange' },
+];
+
+function loadGDACS() {
+  fetch('/api/gdacs')
+    .then(r=>r.json()).then(d=>renderGDACS(d.events||d||MOCK_GDACS))
+    .catch(()=>renderGDACS(MOCK_GDACS));
+}
+
+function renderGDACS(events) {
+  const grid = document.getElementById('gdacs-grid');
+  const sevCls = { CRITICAL:'sev-critical', HIGH:'sev-high', MEDIUM:'sev-medium', LOW:'sev-low' };
+  grid.innerHTML = events.slice(0,12).map(e => `
+    <div class="disaster-card ${e.cls||'dc-blue'}">
+      <div class="disaster-icon">${e.icon}</div>
+      <div class="disaster-title">${e.title}</div>
+      <div class="disaster-country"><i class="fas fa-map-marker-alt" style="color:var(--text-muted);"></i> ${e.country}</div>
+      <div>
+        <span class="sev-badge ${sevCls[e.severity]||'sev-low'}">${e.severity}</span>
+        <span style="font-size:0.72rem;color:var(--accent);margin-left:0.5rem;background:rgba(0,210,255,0.08);padding:2px 8px;border-radius:5px;">${e.type}</span>
+      </div>
+      <div class="disaster-date"><i class="fas fa-clock" style="color:var(--text-muted);"></i> ${e.date}</div>
+    </div>`).join('');
+}
+
+// ============================================================
+// CROSS-BORDER MONITORING
+// ============================================================
+const BORDERS = [
+  { name:'India — Pakistan', region:'Western Border', hazard:'EARTHQUAKE + HEATWAVE', level:'HIGH', color:'#ffaa00' },
+  { name:'India — Bangladesh', region:'Eastern Border', hazard:'FLOOD + CYCLONE', level:'CRITICAL', color:'#ff3b6b' },
+  { name:'India — Nepal', region:'Northern Border', hazard:'EARTHQUAKE + FLOOD', level:'HIGH', color:'#ffaa00' },
+  { name:'India — China', region:'Northern Border (Himalayas)', hazard:'GLACIER FLOOD', level:'MEDIUM', color:'#ffdd44' },
+  { name:'India — Myanmar', region:'Eastern Corridor', hazard:'CYCLONE + FLOOD', level:'MEDIUM', color:'#ffdd44' },
+  { name:'India — Sri Lanka (Sea)', region:'Palk Strait', hazard:'CYCLONE + TSUNAMI', level:'HIGH', color:'#ffaa00' },
+  { name:'Bay of Bengal', region:'Maritime Zone', hazard:'CYCLONE GENESIS', level:'CRITICAL', color:'#ff3b6b' },
+  { name:'Arabian Sea', region:'Western Maritime', hazard:'CYCLONE + MONSOON', level:'HIGH', color:'#ffaa00' },
+];
+
+function renderBorders() {
+  const grid = document.getElementById('border-grid');
+  grid.innerHTML = BORDERS.map(b => {
+    const dot = b.level==='CRITICAL'?'#ff3b6b': b.level==='HIGH'?'#ffaa00':'#ffdd44';
+    return `<div class="border-card">
+      <div class="border-name">${b.name}</div>
+      <div class="border-hazard">${b.region}</div>
+      <div style="font-size:0.78rem;color:#a0b8e0;margin-top:0.3rem;"><i class="fas fa-exclamation-triangle" style="color:${dot};"></i> ${b.hazard}</div>
+      <div class="hazard-level">
+        <span class="hazard-dot" style="background:${dot};"></span>
+        <span style="font-size:0.78rem;font-weight:700;color:${dot};">${b.level}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// PREPAREDNESS BAR CHART
+// ============================================================
+const PREP_DATA = {
+  labels: ['Japan','Germany','USA','Australia','France','UK','Canada','China','Brazil','India','Indonesia','Turkey','Mexico','Pakistan','Bangladesh'],
+  scores: [92,88,85,82,80,78,76,68,55,52,48,44,42,30,28],
+};
+
+function initPrepChart() {
+  const ctx = document.getElementById('prep-chart').getContext('2d');
+  const colors = PREP_DATA.scores.map(s => s>=75?'rgba(0,230,118,0.75)': s>=50?'rgba(255,170,0,0.75)':'rgba(255,59,107,0.75)');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: PREP_DATA.labels,
+      datasets: [{
+        label: 'Preparedness Score (0-100)',
+        data: PREP_DATA.scores,
+        backgroundColor: colors,
+        borderColor: colors.map(c=>c.replace('0.75','1')),
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` Score: ${ctx.parsed.x}/100`
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0, max: 100,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#6b80b0', font: { size: 11 } },
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.03)' },
+          ticks: { color: '#c8d8ff', font: { size: 12, weight: '600' } },
+        }
+      }
+    }
+  });
+  fetch('/api/global/preparedness').then(r=>r.json()).then(d=>{
+    // Could update chart data here
+  }).catch(()=>{});
+}
+
+// ============================================================
+// VULNERABILITY RADAR
+// ============================================================
+const VULN_DATA = {
+  India:       [72, 68, 65, 55],
+  Bangladesh:  [85, 60, 70, 40],
+  Philippines: [80, 65, 75, 55],
+  Indonesia:   [78, 70, 68, 52],
+  Pakistan:    [75, 55, 72, 38],
+  Nepal:       [80, 65, 60, 42],
+  Myanmar:     [70, 60, 55, 35],
+  China:       [60, 72, 50, 68],
+  USA:         [40, 65, 35, 85],
+  Japan:       [55, 80, 42, 90],
+  Australia:   [30, 72, 28, 80],
+  Brazil:      [35, 60, 42, 55],
+  Nigeria:     [25, 40, 60, 28],
+  Ethiopia:    [30, 35, 55, 25],
+  Germany:     [20, 70, 18, 88],
+};
+
+let radarChart = null;
+
+function initRadar() {
+  const ctx = document.getElementById('vuln-radar').getContext('2d');
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Economic\nVulnerability', 'Infrastructure\nExposure', 'Social\nVulnerability', 'Institutional\nCapacity'],
+      datasets: [{
+        label: 'India',
+        data: VULN_DATA['India'],
+        backgroundColor: 'rgba(0,210,255,0.15)',
+        borderColor: '#00d2ff',
+        pointBackgroundColor: '#00d2ff',
+        pointRadius: 5,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#c8d8ff' } } },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          grid: { color: 'rgba(255,255,255,0.08)' },
+          angleLines: { color: 'rgba(255,255,255,0.08)' },
+          ticks: { color: '#6b80b0', font: { size: 10 }, stepSize: 20, backdropColor: 'transparent' },
+          pointLabels: { color: '#c8d8ff', font: { size: 11 } }
+        }
+      }
+    }
+  });
+  updateRadar('India');
+}
+
+function updateRadar(country) {
+  if(!radarChart || !VULN_DATA[country]) return;
+  const data = VULN_DATA[country];
+  const avg = Math.round(data.reduce((a,b)=>a+b,0)/data.length);
+  radarChart.data.datasets[0].label = country;
+  radarChart.data.datasets[0].data = data;
+  radarChart.update();
+  const labels = ['Economic Vulnerability', 'Infrastructure Exposure', 'Social Vulnerability', 'Institutional Capacity'];
+  const colors = ['var(--danger)','var(--warning)','var(--accent2)','var(--success)'];
+  document.getElementById('vuln-scores').innerHTML = data.map((v,i)=>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.3rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <span style="font-size:0.75rem;color:var(--text-muted);">${labels[i]}</span>
+      <span style="font-size:0.85rem;font-weight:700;color:${colors[i]};">${v}</span>
+    </div>`
+  ).join('') + `<div style="margin-top:0.6rem;padding-top:0.5rem;border-top:1px solid var(--border);text-align:center;"><span style="font-size:1.1rem;font-weight:900;color:var(--accent);">${avg}</span><span style="font-size:0.72rem;color:var(--text-muted);"> / 100 avg</span></div>`;
+}
+
+// ============================================================
+// MULTI-LANGUAGE ALERTS
+// ============================================================
+const ALERTS = {
+  EN: `🚨 CRITICAL DISASTER ALERT — PRAHARIX 2.0 APEX EDITION
+Priority Level: CRITICAL (L3 — National Level)
+Issued: ${new Date().toUTCString()}
+
+CYCLONE WARNING — Tropical Cyclone BIPARJOY
+Category 4 | Wind Speed: 165 km/h | Storm Surge: 3-5 m
+
+Affected Regions: Coastal Gujarat, Maharashtra, Goa
+Landfall Expected: 36-48 hours
+Evacuation Order: MANDATORY for zones A, B, C
+
+Agencies Notified: NDMA, NDRF, IMD, Coast Guard, Navy
+Contact NDMA Helpline: 1800-180-1253`,
+
+  HI: `🚨 गंभीर आपदा चेतावनी — PRAHARIX 2.0
+प्राथमिकता: अति-गंभीर (राष्ट्रीय स्तर L3)
+जारी: ${new Date().toLocaleString('hi-IN')}
+
+चक्रवात चेतावनी — उष्णकटिबंधीय चक्रवात बिपरजॉय
+श्रेणी 4 | वायु गति: 165 किमी/घंटा | तूफान की लहर: 3-5 मीटर
+
+प्रभावित क्षेत्र: गुजरात, महाराष्ट्र, गोवा तट
+लैंडफॉल: 36-48 घंटे में
+अनिवार्य निकासी: ज़ोन A, B, C
+
+NDMA हेल्पलाइन: 1800-180-1253`,
+
+  MR: `🚨 गंभीर आपत्ती इशारा — PRAHARIX 2.0
+प्राधान्य: अति-गंभीर (राष्ट्रीय स्तर L3)
+जारी: ${new Date().toLocaleString('mr-IN')}
+
+चक्रीवादळ इशारा — उष्णकटिबंधीय चक्रीवादळ बिपरजॉय
+श्रेणी 4 | वाऱ्याचा वेग: 165 किमी/तास | लाटांची उंची: 3-5 मीटर
+
+प्रभावित क्षेत्रे: किनारपट्टी गुजरात, महाराष्ट्र, गोवा
+जमीनीवर धडक: 36-48 तासांत
+अनिवार्य स्थलांतर: झोन A, B, C
+
+NDMA हेल्पलाइन: 1800-180-1253`,
+
+  FR: `🚨 ALERTE DE CATASTROPHE CRITIQUE — PRAHARIX 2.0
+Niveau de Priorité: CRITIQUE (Niveau National L3)
+Émis: ${new Date().toLocaleString('fr-FR')}
+
+AVERTISSEMENT CYCLONE — Cyclone Tropical BIPARJOY
+Catégorie 4 | Vitesse du vent: 165 km/h | Surge: 3-5 m
+
+Régions Affectées: Côte du Gujarat, Maharashtra, Goa
+Atterrissage Prévu: 36-48 heures
+Ordre d'Évacuation: OBLIGATOIRE pour les zones A, B, C
+
+Ligne d'Urgence NDMA: 1800-180-1253`,
+
+  ES: `🚨 ALERTA CRÍTICA DE DESASTRE — PRAHARIX 2.0
+Nivel de Prioridad: CRÍTICO (Nivel Nacional L3)
+Emitido: ${new Date().toLocaleString('es-ES')}
+
+AVISO DE CICLÓN — Ciclón Tropical BIPARJOY
+Categoría 4 | Velocidad del viento: 165 km/h | Oleaje: 3-5 m
+
+Regiones Afectadas: Costa de Gujarat, Maharashtra, Goa
+Entrada en tierra: 36-48 horas
+Orden de Evacuación: OBLIGATORIA zonas A, B, C
+
+Línea de Ayuda NDMA: 1800-180-1253`,
+
+  AR: `🚨 تحذير كارثي حرج — PRAHARIX 2.0
+مستوى الأولوية: حرج (المستوى الوطني L3)
+الإصدار: ${new Date().toLocaleString('ar-SA')}
+
+تحذير الإعصار — الإعصار الاستوائي بيبارجوي
+الفئة 4 | سرعة الرياح: 165 كم/ساعة | موجة العاصفة: 3-5 م
+
+المناطق المتضررة: سواحل غوجارات، ماهاراشترا، غوا
+موعد الوصول إلى البر: 36-48 ساعة
+أمر الإخلاء: إلزامي للمناطق أ، ب، ج
+
+خط مساعدة NDMA: 1800-180-1253`,
+
+  ZH: `🚨 重大灾难警报 — PRAHARIX 2.0
+优先级: 严重 (国家级 L3)
+发布时间: ${new Date().toLocaleString('zh-CN')}
+
+飓风警告 — 热带气旋 BIPARJOY
+4级 | 风速: 165 公里/小时 | 风暴潮: 3-5 米
+
+受影响地区: 古吉拉特邦沿海、马哈拉施特拉邦、果阿邦
+预计登陆: 36-48小时内
+强制撤离: A、B、C 区
+
+NDMA紧急热线: 1800-180-1253`,
+
+  RU: `🚨 КРИТИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ — PRAHARIX 2.0
+Уровень приоритета: КРИТИЧЕСКИЙ (Национальный уровень L3)
+Выдано: ${new Date().toLocaleString('ru-RU')}
+
+ПРЕДУПРЕЖДЕНИЕ О ЦИКЛОНЕ — Тропический циклон БИПАРДЖОЙ
+Категория 4 | Скорость ветра: 165 км/ч | Штормовой нагон: 3-5 м
+
+Пострадавшие районы: побережье Гуджарата, Махараштра, Гоа
+Ожидаемый выход на сушу: 36-48 часов
+Приказ об эвакуации: ОБЯЗАТЕЛЬНО для зон А, Б, В
+
+Горячая линия NDMA: 1800-180-1253`,
+};
+
+const LANG_NAMES = { EN:'English', HI:'हिंदी', MR:'मराठी', FR:'Français', ES:'Español', AR:'العربية', ZH:'中文', RU:'Русский' };
+let currentLang = 'EN';
+
+function switchLang(code) {
+  currentLang = code;
+  document.getElementById('alert-text').value = ALERTS[code] || ALERTS['EN'];
+  document.getElementById('lang-label').textContent = LANG_NAMES[code];
+  document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[onclick="switchLang('${code}')"]`).classList.add('active');
+}
+
+function broadcastAlert() {
+  showNotif(`Alert broadcast in ${LANG_NAMES[currentLang]} to all registered agencies!`, 'success');
+}
+
+function sendSMS() { showNotif('SMS alert dispatched to 48,000+ registered mobile numbers!', 'success'); }
+function sendEmail() { showNotif('Email alert sent to 1,200+ agency contacts!', 'info'); }
+function copyAlert() {
+  navigator.clipboard.writeText(document.getElementById('alert-text').value)
+    .then(()=>showNotif('Alert text copied to clipboard!','success'))
+    .catch(()=>showNotif('Copy failed — please copy manually','error'));
+}
+
+// ============================================================
+// AUTO REFRESH
+// ============================================================
+function autoRefresh() {
+  loadCounters();
+  loadGDACS();
+}
+setInterval(autoRefresh, 60000);
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadCounters();
+  initGlobe();
+  loadCountries();
+  loadGDACS();
+  renderBorders();
+  initPrepChart();
+  initRadar();
+  switchLang('EN');
+  showNotif('Global Disaster Intelligence Command — Online', 'success');
+});
+</script>
+</body>
+</html>

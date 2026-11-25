@@ -1,0 +1,23 @@
+site_name: PRAHARIX 3.0 - National Disaster Command Platform
+site_description: Technical documentation for PRAHARIX 3.0 Apex Edition
+site_author: PRAHARIX Development Team
+theme:
+  name: material
+  palette:
+    primary: deep-orange
+    accent: blue
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - API Reference: api.md
+  - Security: security.md
+  - Deployment: deployment.md
+  - Research: research.md
+
+plugins:
+  - search

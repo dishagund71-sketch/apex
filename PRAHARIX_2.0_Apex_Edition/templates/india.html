@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>PRAHARIX 2.0 - India Strategic National Command Center</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif;}
+body{background:#070d1e;color:white;min-height:100vh;padding-bottom:40px;}
+.header{background:linear-gradient(180deg,#111c38 0%,#0c1429 100%);padding:25px 20px;text-align:center;border-bottom:2px solid #ff9100;box-shadow:0 4px 20px rgba(255,145,0,0.2);}
+.header h1{font-size:32px;font-weight:900;background:linear-gradient(90deg,#ff7b00,#ffd700,#00e676,#00bfff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.header p{color:#94a3b8;font-size:13px;margin-top:6px;letter-spacing:0.5px;}
+.container{max-width:1300px;margin:0 auto;padding:20px;}
+.card{background:rgba(18,28,52,0.85);backdrop-filter:blur(14px);border:1px solid rgba(0,191,255,0.2);border-radius:16px;padding:22px;margin-bottom:20px;box-shadow:0 8px 24px rgba(0,0,0,0.35);}
+.badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;}
+.badge-ncs{border-color:#ff9100;color:#ff9100;background:rgba(255,145,0,0.15);border:1px solid #ff9100;}
+.badge-zone5{background:#ff1744;color:#fff;}
+.badge-zone4{background:#ff9100;color:#000;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}th{background:#0d152b;padding:12px;color:#00bfff;text-align:left;font-size:13px;}td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;}tr:hover{background:rgba(0,191,255,0.04);}
+#map{height:520px;width:100%;border-radius:14px;border:1px solid rgba(0,191,255,0.3);}
+.toggle-btn{padding:8px 18px;border:1px solid #00bfff;background:rgba(0,191,255,0.1);color:#00bfff;border-radius:22px;cursor:pointer;font-weight:700;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.toggle-btn:hover{background:rgba(0,191,255,0.25);}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+.eew-card{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🇮🇳 PRAHARIX INDIA STRATEGIC COMMAND CENTER</h1>
+    <p>National Centre for Seismology (NCS / MoES) • IMD Cyclones & Radar • ISRO Bhuvan • 16 NDRF Battalions</p>
+</div>
+
+<div class="container">
+    <!-- NAV BAR -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="/apex" class="toggle-btn" style="border-color:#00bfff; color:#00bfff; background:rgba(0,191,255,0.2); font-weight:800; box-shadow:0 0 12px rgba(0,191,255,0.4);">⚡ APEX Command Hub</a>
+            <a href="/" class="toggle-btn">🏠 Back To Mission Dashboard</a>
+            <a href="/alerts" class="toggle-btn" style="border-color:#ff1744; color:#ff1744;">🚨 Alert Center</a>
+            <a href="/sar" class="toggle-btn" style="border-color:#ff7b00; color:#ff7b00;">🛰 SAR Inundation</a>
+        </div>
+        <div>
+            <span class="badge" style="background:#00e676; color:#000; font-size:12px;">🟢 NATIONAL THREAT STATUS: ACTIVE MONITORING</span>
+        </div>
+    </div>
+
+    <!-- TOP SUMMARY KPI CARDS -->
+    <div class="grid-3">
+        <div class="card" style="border-top:3px solid #ff9100;">
+            <h3 style="font-size:15px; color:#ff9100;">🇮🇳 National Centre for Seismology Feed</h3>
+            <p style="font-size:26px; font-weight:800; color:#fff; margin:8px 0;">{{ ncs_events|length }} <span style="font-size:14px; color:#aaa;">NCS Quakes Logged</span></p>
+            <p style="font-size:12px; color:#cbd5e1;">Covering: <b>Himalayan Arc, Kutch, Northeast, Delhi NCR</b></p>
+            <span class="badge badge-ncs" style="margin-top:8px;">MoES India Real-Time Stream</span>
+        </div>
+
+        <div class="card" style="border-top:3px solid #ffd700;">
+            <h3 style="font-size:15px; color:#ffd700;">🌀 IMD Cyclone & Radar Coverage</h3>
+            <p style="font-size:26px; font-weight:800; color:#ffd700; margin:8px 0;">{{ cyclone_tracks|length }} Active <span style="font-size:14px; color:#aaa;">Depressions Tracked</span></p>
+            <p style="font-size:12px; color:#cbd5e1;">Doppler Radars Active: <b>{{ radar_stations|length }} Stations Online</b></p>
+            <span class="badge" style="border-color:#ffd700; color:#ffd700; margin-top:8px;">Bay of Bengal & Arabian Sea</span>
+        </div>
+
+        <div class="card" style="border-top:3px solid #00e676;">
+            <h3 style="font-size:15px; color:#00e676;">🚒 NDRF Strategic Battalions</h3>
+            <p style="font-size:26px; font-weight:800; color:#00e676; margin:8px 0;">16 Battalions <span style="font-size:14px; color:#aaa;">Standby</span></p>
+            <p style="font-size:12px; color:#cbd5e1;">Safe Relief Camps: <b>{{ relief_camps|length }} Pre-Mapped Mega Shelters</b></p>
+            <span class="badge" style="border-color:#00e676; color:#00e676; margin-top:8px;">NDMA Quick Reaction Grid</span>
+        </div>
+    </div>
+
+    <!-- INTERACTIVE MAP WITH ZONES & NDRF -->
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            <div>
+                <h2 style="font-size:18px; color:#00bfff;">🗺️ Strategic India Multi-Hazard Map (ISRO Bhuvan / Satellite Supported)</h2>
+                <p style="font-size:12px; color:#94a3b8;">High-Risk Seismic Zones V & IV • IMD Cyclone Tracks • 16 NDRF Battalions</p>
+            </div>
+            <div style="font-size:12px;">
+                <span class="badge badge-zone5">Zone V (Very High Risk)</span>
+                <span class="badge badge-zone4">Zone IV (High Risk)</span>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <!-- EEW PHYSICS LEAD-TIME DEMO FOR INDIA -->
+    <div class="card" style="border:1px solid #ff1744;">
+        <h2 style="font-size:18px; color:#ff1744; margin-bottom:6px;">⚡ Earthquake Early Warning (EEW) City Lead-Times (Kangra M6.2 Scenario)</h2>
+        <p style="font-size:12px; color:#cbd5e1; margin-bottom:14px;">Physics-based P-Wave vs S-Wave travel times for Indian metros:</p>
+        <div class="grid-3">
+            {% for city in default_eew.lead_time_results[:6] %}
+            <div class="eew-card" style="border-color:{{city.color}};">
+                <b style="font-size:14px; color:#fff;">{{city.city}}</b>
+                <p style="font-size:24px; font-weight:900; color:{{city.color}}; margin:4px 0;">{{city.lead_time_s}}s Lead-Time</p>
+                <p style="font-size:11px; color:#aaa;">Distance: {{city.distance_km}} km | S-Wave: {{city.s_wave_arrival_s}}s</p>
+                <small style="color:{{city.color}}; font-weight:700;">{{city.intensity}}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- SEISMIC EVENTS TABLE -->
+    <div class="card">
+        <h2 style="font-size:18px; color:#00e676; margin-bottom:6px;">📋 Indian & Border Region Seismic Feed</h2>
+        <table>
+            <tr>
+                <th>Location</th>
+                <th>Source Feed</th>
+                <th>Magnitude</th>
+                <th>Depth</th>
+                <th>Risk / Threat</th>
+                <th>Seismic Zone</th>
+                <th>CAP Alert</th>
+            </tr>
+            {% if earthquakes %}
+                {% for eq in earthquakes %}
+                <tr>
+                    <td><b>{{eq.place}}</b></td>
+                    <td><span class="badge badge-ncs">{{ eq.source|default('NCS (MoES India)') }}</span></td>
+                    <td><b style="color:#ffd700;">{{eq.mag}}</b></td>
+                    <td>{{eq.depth|default(12.0)}} km</td>
+                    <td>
+                        <span class="badge" style="{% if eq.threat_level == 'CRITICAL' %}background:#ff1744;color:#fff;{% elif eq.threat_level == 'HIGH' %}background:#ff9100;color:#000;{% else %}background:#00e676;color:#000;{% endif %}">
+                            {{eq.threat_level}}
+                        </span>
+                    </td>
+                    <td><span class="badge badge-zone5">Zone V</span></td>
+                    <td>
+                        <a href="/api/cap/download?event_id={{eq.event_id}}&lat={{eq.lat}}&lon={{eq.lon}}&mag={{eq.mag}}&place={{eq.place}}" class="toggle-btn" style="padding:4px 8px; font-size:11px; border-color:#ffd700; color:#ffd700;">
+                            📢 XML
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:20px; color:#aaa;">No active regional alerts in monitored perimeter.</td>
+                </tr>
+            {% endif %}
+        </table>
+    </div>
+</div>
+
+<script>
+const earthquakesData = {{ earthquakes | tojson }};
+const seismicZones = {{ seismic_zones | tojson }};
+const cycloneTracks = {{ cyclone_tracks | tojson }};
+const radarStations = {{ radar_stations | tojson }};
+const ndrfBattalions = {{ ndrf_battalions | tojson }};
+
+const map = L.map('map').setView([23.0, 80.0], 5);
+
+// Baselayers
+const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+L.control.layers({"🗺️ Tactical Dark": darkTiles, "🛰️ ISRO Bhuvan / Satellite": esriSat}).addTo(map);
+
+// Zones
+seismicZones.zone_v.forEach(z => {
+    L.polygon(z.coords, {color: z.color, fillColor: z.color, fillOpacity: 0.22, weight: 2, dashArray: '4,4'}).addTo(map).bindPopup(`<b>${z.name}</b><br>Zone V (Factor 0.36)`);
+});
+seismicZones.zone_iv.forEach(z => {
+    L.polygon(z.coords, {color: z.color, fillColor: z.color, fillOpacity: 0.16, weight: 1.8, dashArray: '3,3'}).addTo(map).bindPopup(`<b>${z.name}</b><br>Zone IV (Factor 0.24)`);
+});
+
+// Cyclones & Radars
+cycloneTracks.forEach(c => {
+    L.circleMarker([c.center_lat, c.center_lon], {radius: 12, color: '#ffd700', fillColor: '#ff7b00', fillOpacity: 0.8, weight: 2}).addTo(map).bindPopup(`<b>🌀 ${c.system_name}</b><br>${c.category} | Wind: ${c.max_wind_kmh} km/h`);
+});
+radarStations.forEach(r => {
+    L.circle([r.lat, r.lon], {radius: r.range_km * 1000, color: '#00bfff', fillColor: '#00bfff', fillOpacity: 0.04, weight: 1}).addTo(map);
+    L.circleMarker([r.lat, r.lon], {radius: 5, color: '#00bfff', fillColor: '#fff', fillOpacity: 0.9}).addTo(map).bindPopup(`<b>📡 ${r.name}</b><br>Status: ${r.status}`);
+});
+
+// NDRF Battalions
+ndrfBattalions.forEach(bn => {
+    L.circleMarker([bn.lat, bn.lon], {radius: 7, color: '#00e676', fillColor: '#111827', fillOpacity: 0.9, weight: 2}).addTo(map).bindPopup(`<b>🚒 ${bn.name}</b><br>HQ: ${bn.hq}<br>Hotline: ${bn.contact}<br>${bn.role}`);
+});
+
+// Earthquakes
+earthquakesData.forEach(eq => {
+    const col = eq.threat_level === 'CRITICAL' ? '#ff1744' : (eq.threat_level === 'HIGH' ? '#ff9100' : '#00e676');
+    L.circle([eq.lat, eq.lon], {radius: 25000, color: col, fillColor: col, fillOpacity: 0.5, weight: 2}).addTo(map).bindPopup(`<b>${eq.place}</b><br>Mag: ${eq.mag} | ${eq.threat_level}`);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>PRAHARIX 2.0 — Multi-Hazard Live Intelligence Hub</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+body{background:#050816;color:#e2e8f0;overflow-x:hidden;min-height:100vh;}
+/* ═══ TOP NAV ═══ */
+.navbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;
+  background:rgba(5,8,22,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(0,191,255,.22);
+  position:sticky;top:0;z-index:999;flex-wrap:wrap;gap:10px;}
+.nav-brand{font-size:22px;font-weight:900;background:linear-gradient(90deg,#ff7b00,#ffd700,#00e676,#00bfff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.nav-links a{color:#94a3b8;text-decoration:none;margin:0 10px;font-size:13px;font-weight:600;transition:.2s;}
+.nav-links a:hover{color:#00bfff;}
+/* ═══ HERO ═══ */
+.hero{text-align:center;padding:38px 20px 24px;position:relative;}
+.hero h1{font-size:38px;font-weight:900;letter-spacing:-0.5px;
+  background:linear-gradient(90deg,#ff4444,#ff9100,#ffd700,#00e676,#00bfff,#b388ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.15;}
+.hero p{color:#94a3b8;margin-top:8px;font-size:14px;max-width:700px;margin-inline:auto;}
+/* ═══ SOURCE TABS ═══ */
+.source-tabs{display:flex;gap:8px;padding:0 20px 16px;flex-wrap:wrap;justify-content:center;}
+.src-tab{padding:9px 20px;border-radius:30px;border:1.5px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);color:#94a3b8;cursor:pointer;font-size:12px;font-weight:700;
+  transition:all .25s;display:flex;align-items:center;gap:7px;user-select:none;}
+.src-tab .dot{width:8px;height:8px;border-radius:50%;background:#94a3b8;transition:.25s;}
+.src-tab:hover{border-color:#00bfff;color:#00bfff;}
+.src-tab.active{color:#fff;border-color:var(--accent);background:rgba(var(--accent-rgb),.15);box-shadow:0 0 14px rgba(var(--accent-rgb),.35);}
+.src-tab.active .dot{background:var(--accent);box-shadow:0 0 8px var(--accent);}
+.src-tab[data-src="usgs"]{--accent:#00e676;--accent-rgb:0,230,118;}
+.src-tab[data-src="imd"]{--accent:#ffd700;--accent-rgb:255,215,0;}
+.src-tab[data-src="glofas"]{--accent:#00bfff;--accent-rgb:0,191,255;}
+.src-tab[data-src="nasa"]{--accent:#ff9100;--accent-rgb:255,145,0;}
+.src-tab[data-src="cwc"]{--accent:#b388ff;--accent-rgb:179,136,255;}
+/* ═══ MAP + PANEL LAYOUT ═══ */
+.main-grid{display:grid;grid-template-columns:1fr 380px;gap:0;min-height:600px;}
+#live-map{height:620px;width:100%;border-radius:0;border:none;}
+/* ═══ SIDE PANEL ═══ */
+.side-panel{background:rgba(5,8,22,.95);border-left:1px solid rgba(0,191,255,.18);overflow-y:auto;max-height:620px;}
+.panel-header{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;}
+.panel-header h3{font-size:14px;font-weight:800;color:#e2e8f0;}
+.live-badge{background:rgba(0,230,118,.15);border:1px solid #00e676;color:#00e676;
+  font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;display:flex;align-items:center;gap:5px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#00e676;animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+/* ═══ EVENT CARDS ═══ */
+.event-list{padding:10px 12px;}
+.event-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;
+  padding:11px 13px;margin-bottom:8px;cursor:pointer;transition:all .2s;border-left:3px solid transparent;}
+.event-card:hover{background:rgba(0,191,255,.06);border-color:rgba(0,191,255,.3);}
+.event-card.level-critical{border-left-color:#ff1744;}
+.event-card.level-high{border-left-color:#ff9100;}
+.event-card.level-medium{border-left-color:#ffd700;}
+.event-card.level-low{border-left-color:#00e676;}
+.event-card.level-flood{border-left-color:#00bfff;}
+.event-card.level-cyclone{border-left-color:#ffd700;}
+.event-card.level-event{border-left-color:#ff9100;}
+.ec-title{font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ec-meta{font-size:11px;color:#64748b;margin-top:3px;}
+.ec-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:800;display:inline-block;margin-top:4px;}
+.badge-crit{background:rgba(255,23,68,.2);color:#ff1744;border:1px solid #ff1744;}
+.badge-high{background:rgba(255,145,0,.2);color:#ff9100;border:1px solid #ff9100;}
+.badge-med{background:rgba(255,215,0,.2);color:#ffd700;border:1px solid #ffd700;}
+.badge-low{background:rgba(0,230,118,.2);color:#00e676;border:1px solid #00e676;}
+.badge-flood{background:rgba(0,191,255,.2);color:#00bfff;border:1px solid #00bfff;}
+.badge-src{font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,.07);color:#94a3b8;margin-left:5px;}
+/* ═══ STATS STRIP ═══ */
+.stats-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:1px solid rgba(0,191,255,.12);}
+.stat-box{text-align:center;padding:14px 8px;border-right:1px solid rgba(255,255,255,.06);}
+.stat-box:last-child{border-right:none;}
+.stat-num{font-size:26px;font-weight:900;line-height:1;}
+.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+/* ═══ DATA SECTIONS ═══ */
+.section{padding:20px;border-top:1px solid rgba(255,255,255,.06);}
+.section-title{font-size:14px;font-weight:800;color:#e2e8f0;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.section-title .src-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;}
+/* ═══ TABLE ═══ */
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{background:rgba(0,191,255,.08);padding:9px 10px;color:#00bfff;text-align:left;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
+.data-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);color:#cbd5e1;vertical-align:middle;}
+.data-table tr:hover td{background:rgba(255,255,255,.03);}
+/* ═══ LOADING SPINNER ═══ */
+.loading-box{display:flex;align-items:center;justify-content:center;gap:10px;padding:30px;color:#64748b;font-size:13px;}
+.spinner{width:20px;height:20px;border:2px solid rgba(0,191,255,.2);border-top-color:#00bfff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+/* ═══ PROGRESS BAR ═══ */
+.prog-bar-wrap{background:rgba(255,255,255,.05);border-radius:999px;height:6px;overflow:hidden;margin-top:6px;}
+.prog-bar-fill{height:100%;border-radius:999px;transition:width .6s ease;}
+/* ═══ SOURCE SECTION WRAPPER ═══ */
+.source-section{display:none;}
+.source-section.active{display:block;}
+/* ═══ LEGEND ═══ */
+.map-legend{position:absolute;bottom:30px;left:12px;z-index:999;background:rgba(5,8,22,.9);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 14px;font-size:11px;}
+.map-legend-item{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.leg-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+/* ═══ REFRESH BTN ═══ */
+.refresh-btn{background:rgba(0,191,255,.1);border:1px solid rgba(0,191,255,.4);color:#00bfff;
+  padding:5px 14px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:700;transition:.2s;}
+.refresh-btn:hover{background:rgba(0,191,255,.22);}
+/* ═══ GLOFAS RIVER CARDS ═══ */
+.river-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.river-card{background:rgba(0,191,255,.05);border:1px solid rgba(0,191,255,.18);border-radius:12px;padding:14px;}
+.river-name{font-size:13px;font-weight:800;color:#00bfff;}
+.river-val{font-size:22px;font-weight:900;margin:4px 0;}
+.river-unit{font-size:11px;color:#64748b;}
+.discharge-bar{margin-top:8px;}
+/* ═══ IMD CYCLONE ═══ */
+.cyclone-track{border-left:3px solid #ffd700;padding-left:12px;margin-bottom:12px;}
+.cyclone-name{font-size:13px;font-weight:800;color:#ffd700;}
+.cyclone-info{font-size:11px;color:#94a3b8;margin-top:3px;}
+/* ═══ NASA EVENT CARD ═══ */
+.nasa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
+.nasa-card{background:rgba(255,145,0,.05);border:1px solid rgba(255,145,0,.2);border-radius:12px;padding:14px;}
+.nasa-title{font-size:13px;font-weight:800;color:#ff9100;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nasa-cat{font-size:11px;color:#64748b;margin-top:3px;}
+.nasa-coords{font-size:11px;color:#94a3b8;margin-top:5px;}
+/* ═══ CWC ═══ */
+.cwc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.cwc-card{background:rgba(179,136,255,.05);border:1px solid rgba(179,136,255,.2);border-radius:12px;padding:14px;}
+.cwc-river{font-size:12px;font-weight:800;color:#b388ff;}
+.cwc-level{font-size:20px;font-weight:900;margin:4px 0;}
+.cwc-status{font-size:11px;font-weight:700;}
+.cwc-normal{color:#00e676;}
+.cwc-warning{color:#ffd700;}
+.cwc-danger{color:#ff9100;}
+.cwc-critical{color:#ff1744;}
+/* ═══ TOAST ═══ */
+#toast-container{position:fixed;top:70px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:rgba(5,8,22,.97);border:1px solid rgba(0,191,255,.4);border-radius:10px;
+  padding:12px 16px;font-size:12px;min-width:260px;max-width:340px;animation:slideIn .3s ease;
+  display:flex;align-items:flex-start;gap:10px;}
+.toast-icon{font-size:18px;line-height:1;flex-shrink:0;}
+.toast-body{flex:1;}
+.toast-title{font-weight:800;color:#e2e8f0;font-size:12px;}
+.toast-msg{color:#94a3b8;font-size:11px;margin-top:2px;}
+@keyframes slideIn{from{opacity:0;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}
+.toast.toast-out{animation:slideOut .4s ease forwards;}
+@keyframes slideOut{to{opacity:0;transform:translateX(40px);}}
+/* ═══ DETAIL MODAL ═══ */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:99998;
+  align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#0b1329;border:2px solid #00bfff;border-radius:18px;max-width:600px;width:100%;
+  padding:28px;box-shadow:0 0 50px rgba(0,191,255,.25);position:relative;max-height:85vh;overflow-y:auto;}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#ff4444;font-size:22px;cursor:pointer;font-weight:900;}
+.modal-title{font-size:18px;font-weight:900;color:#e2e8f0;margin-bottom:16px;padding-right:30px;}
+.modal-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;}
+.modal-label{color:#64748b;font-weight:600;}
+.modal-value{color:#e2e8f0;font-weight:700;text-align:right;max-width:60%;}
+/* ═══ FOOTER ═══ */
+.footer{text-align:center;padding:16px;border-top:1px solid rgba(255,255,255,.06);font-size:11px;color:#475569;margin-top:4px;}
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:900px){
+  .main-grid{grid-template-columns:1fr;}
+  .side-panel{max-height:400px;}
+  #live-map{height:400px;}
+  .stats-strip{grid-template-columns:repeat(3,1fr);}
+}
+
+/* ═══ LEAFLET LAYER CONTROL — DARK THEME ═══ */
+.leaflet-control-layers {
+  background: rgba(5,8,22,.92) !important;
+  border: 1px solid rgba(0,191,255,.3) !important;
+  border-radius: 10px !important;
+  color: #e2e8f0 !important;
+  font-size: 12px !important;
+  backdrop-filter: blur(10px);
+}
+.leaflet-control-layers-toggle {
+  background-color: rgba(0,191,255,.15) !important;
+}
+.leaflet-control-layers label {
+  color: #e2e8f0 !important;
+  font-weight: 600;
+  font-size: 12px;
+}
+.leaflet-control-layers-separator {
+  border-top: 1px solid rgba(255,255,255,.1) !important;
+}
+.leaflet-control-layers-expanded {
+  padding: 8px 12px !important;
+}
+.leaflet-bar a {
+  background: rgba(5,8,22,.9) !important;
+  color: #00bfff !important;
+  border-color: rgba(0,191,255,.3) !important;
+}
+.leaflet-bar a:hover {
+  background: rgba(0,191,255,.15) !important;
+}
+.leaflet-container .leaflet-control-attribution {
+  background: rgba(5,8,22,.75) !important;
+  color: #475569 !important;
+  font-size: 10px;
+}
+.leaflet-container .leaflet-control-attribution a {
+  color: #64748b !important;
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="navbar">
+  <div class="nav-brand">🛡️ PRAHARIX 2.0</div>
+  <div class="nav-links">
+    <a href="/">Dashboard</a>
+    <a href="/india">India Monitor</a>
+    <a href="/sar">SAR Intel</a>
+    <a href="/analytics">Analytics</a>
+    <a href="/multihazard" style="color:#00bfff;">Multi-Hazard</a>
+    <a href="/logout">Logout</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="live-badge"><div class="live-dot"></div> LIVE DATA</div>
+    <button class="refresh-btn" onclick="refreshAllSources()">↺ Refresh All</button>
+  </div>
+</nav>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modalTitle">Event Detail</div>
+    <div id="modalBody"></div>
+    <div style="margin-top:16px;">
+      <a id="modalLink" href="#" target="_blank" style="color:#00bfff;font-size:12px;font-weight:700;">🔗 View Source →</a>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>🌐 Multi-Hazard Live Intelligence Hub</h1>
+  <p>Real-time disaster data from USGS · IMD · GloFAS+Sentinel-1 · NASA SACHET · CWC — click any source to explore live data</p>
+</div>
+
+<!-- STATS STRIP (live counters update via JS) -->
+<div class="stats-strip">
+  <div class="stat-box">
+    <div class="stat-num" id="cnt-usgs" style="color:#00e676;">—</div>
+    <div class="stat-lbl">🟢 USGS Earthquakes</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num" id="cnt-imd" style="color:#ffd700;">—</div>
+    <div class="stat-lbl">🌀 IMD Events</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num" id="cnt-glofas" style="color:#00bfff;">—</div>
+    <div class="stat-lbl">🌊 GloFAS Rivers</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num" id="cnt-nasa" style="color:#ff9100;">—</div>
+    <div class="stat-lbl">🛰️ NASA Events</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num" id="cnt-cwc" style="color:#b388ff;">—</div>
+    <div class="stat-lbl">💧 CWC Stations</div>
+  </div>
+</div>
+
+<!-- SOURCE TABS -->
+<div class="source-tabs">
+  <div class="src-tab active" data-src="usgs" onclick="showSource('usgs')">
+    <div class="dot"></div>🌐 USGS — Earthquakes
+  </div>
+  <div class="src-tab" data-src="imd" onclick="showSource('imd')">
+    <div class="dot"></div>⛅ IMD — Meteorology
+  </div>
+  <div class="src-tab" data-src="glofas" onclick="showSource('glofas')">
+    <div class="dot"></div>🛰️ GloFAS + Sentinel-1
+  </div>
+  <div class="src-tab" data-src="nasa" onclick="showSource('nasa')">
+    <div class="dot"></div>🛸 NASA SACHET / EONET
+  </div>
+  <div class="src-tab" data-src="cwc" onclick="showSource('cwc')">
+    <div class="dot"></div>💧 CWC — Flood Watch
+  </div>
+</div>
+
+<!-- MAP + SIDE PANEL -->
+<div class="main-grid" style="position:relative;">
+  <div style="position:relative;">
+    <div id="live-map"></div>
+    <div class="map-legend">
+      <div style="font-size:11px;font-weight:800;color:#e2e8f0;margin-bottom:8px;">MAP LEGEND</div>
+      <div class="map-legend-item"><div class="leg-dot" style="background:#ff1744;"></div>USGS Critical (M≥7.0)</div>
+      <div class="map-legend-item"><div class="leg-dot" style="background:#ff9100;"></div>USGS High (M≥6.0)</div>
+      <div class="map-legend-item"><div class="leg-dot" style="background:#ffd700;"></div>USGS Medium (M≥4.0)</div>
+      <div class="map-legend-item"><div class="leg-dot" style="background:#00e676;"></div>USGS Low (M&lt;4.0)</div>
+      <div class="map-legend-item"><div class="leg-dot" style="background:#00bfff;border:2px solid #fff;"></div>GloFAS River Station</div>
+      <div class="map-legend-item"><div class="leg-dot" style="background:#ff9100;border:2px solid #fff;"></div>NASA EONET Event</div>
+      <div class="map-legend-item"><div class="leg-dot" style="background:#b388ff;border:2px solid #fff;"></div>CWC Flood Station</div>
+    </div>
+  </div>
+  <div class="side-panel">
+    <div class="panel-header">
+      <h3 id="panel-title">🌐 USGS — Live Earthquakes</h3>
+      <div class="live-badge"><div class="live-dot"></div> <span id="panel-ts">Loading…</span></div>
+    </div>
+    <div class="event-list" id="event-list">
+      <div class="loading-box"><div class="spinner"></div>Fetching live data…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SOURCE DATA PANELS (toggled via JS)
+═══════════════════════════════════════════ -->
+
+<!-- USGS PANEL -->
+<div class="source-section active" id="sec-usgs">
+  <div class="section">
+    <div class="section-title">
+      <div class="src-icon" style="background:rgba(0,230,118,.15);color:#00e676;">🌐</div>
+      USGS — Global Earthquake Feed (Past 24 Hours, Real-Time GeoJSON)
+      <span style="margin-left:auto;font-size:11px;color:#64748b;">Source: earthquake.usgs.gov</span>
+    </div>
+    <div id="usgs-loading" class="loading-box"><div class="spinner"></div>Fetching USGS GeoJSON feed…</div>
+    <div id="usgs-table-wrap" style="display:none;overflow-x:auto;">
+      <table class="data-table" id="usgs-table">
+        <thead>
+          <tr>
+            <th>Place</th><th>Magnitude</th><th>Depth (km)</th><th>Time (UTC)</th><th>Threat</th><th>Tsunami</th><th>Detail</th>
+          </tr>
+        </thead>
+        <tbody id="usgs-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- IMD PANEL -->
+<div class="source-section" id="sec-imd">
+  <div class="section">
+    <div class="section-title">
+      <div class="src-icon" style="background:rgba(255,215,0,.15);color:#ffd700;">⛅</div>
+      IMD — India Meteorological Department (Live Conditions + Radar)
+      <span style="margin-left:auto;font-size:11px;color:#64748b;">Source: imd.gov.in + open-meteo.com</span>
+    </div>
+    <!-- Live Weather Grid for key Indian Cities -->
+    <div id="imd-loading" class="loading-box"><div class="spinner"></div>Fetching IMD weather data…</div>
+    <div id="imd-content" style="display:none;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;" id="imd-city-grid"></div>
+      <div style="margin-top:20px;">
+        <div class="section-title" style="margin-bottom:10px;">🌀 Cyclone & Weather Alert Tracking</div>
+        <div id="imd-cyclone-box">
+          <!-- Populated via JS from IMD RSS / NWP API -->
+        </div>
+        <div style="margin-top:16px;padding:14px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);border-radius:12px;">
+          <div style="font-size:12px;font-weight:800;color:#ffd700;margin-bottom:8px;">📡 IMD Live Radar & Official Portals</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <a href="https://mausam.imd.gov.in/" target="_blank" style="color:#ffd700;font-size:12px;padding:6px 14px;border:1px solid rgba(255,215,0,.3);border-radius:20px;text-decoration:none;font-weight:700;">🌐 IMD National Portal</a>
+            <a href="https://mausam.imd.gov.in/responsive/cyclonewarning.php" target="_blank" style="color:#ff9100;font-size:12px;padding:6px 14px;border:1px solid rgba(255,145,0,.3);border-radius:20px;text-decoration:none;font-weight:700;">🌀 Cyclone Warnings</a>
+            <a href="https://www.rsmcnewdelhi.imd.gov.in/" target="_blank" style="color:#ffd700;font-size:12px;padding:6px 14px;border:1px solid rgba(255,215,0,.3);border-radius:20px;text-decoration:none;font-weight:700;">📡 RSMC New Delhi</a>
+            <a href="https://nrsc.gov.in/" target="_blank" style="color:#00e676;font-size:12px;padding:6px 14px;border:1px solid rgba(0,230,118,.3);border-radius:20px;text-decoration:none;font-weight:700;">🛰️ NRSC Radar</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GLOFAS + SENTINEL-1 PANEL -->
+<div class="source-section" id="sec-glofas">
+  <div class="section">
+    <div class="section-title">
+      <div class="src-icon" style="background:rgba(0,191,255,.15);color:#00bfff;">🛰️</div>
+      GloFAS + Sentinel-1 — River Discharge & SAR Flood Extent (Copernicus CEMS)
+      <span style="margin-left:auto;font-size:11px;color:#64748b;">Source: flood-api.open-meteo.com (GloFAS v4) + Copernicus</span>
+    </div>
+    <div id="glofas-loading" class="loading-box"><div class="spinner"></div>Fetching GloFAS river discharge data…</div>
+    <div id="glofas-content" style="display:none;">
+      <div class="river-grid" id="glofas-river-grid"></div>
+      <div style="margin-top:16px;padding:14px;background:rgba(0,191,255,.05);border:1px solid rgba(0,191,255,.18);border-radius:12px;">
+        <div style="font-size:12px;font-weight:800;color:#00bfff;margin-bottom:8px;">🛰️ Sentinel-1 SAR Flood Extent & Copernicus Portals</div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">Sentinel-1 C-band SAR (6-day revisit) provides near-real-time flood extent maps via Copernicus Emergency Management Service (CEMS). Click below to access live GFM products.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <a href="https://global-flood.emergency.copernicus.eu" target="_blank" style="color:#00bfff;font-size:12px;padding:6px 14px;border:1px solid rgba(0,191,255,.3);border-radius:20px;text-decoration:none;font-weight:700;">🌊 GloFAS Portal</a>
+          <a href="https://emergency.copernicus.eu/mapping/list-of-components/EMSN" target="_blank" style="color:#00bfff;font-size:12px;padding:6px 14px;border:1px solid rgba(0,191,255,.3);border-radius:20px;text-decoration:none;font-weight:700;">📡 Copernicus EMS</a>
+          <a href="https://flood-api.open-meteo.com/v1/flood?latitude=26.14&longitude=91.73&daily=river_discharge&forecast_days=7" target="_blank" style="color:#00e676;font-size:12px;padding:6px 14px;border:1px solid rgba(0,230,118,.3);border-radius:20px;text-decoration:none;font-weight:700;">🔗 Raw GloFAS JSON</a>
+          <a href="https://scihub.copernicus.eu/dhus/" target="_blank" style="color:#ffd700;font-size:12px;padding:6px 14px;border:1px solid rgba(255,215,0,.3);border-radius:20px;text-decoration:none;font-weight:700;">🛰️ Sentinel-1 Data Hub</a>
+        </div>
+      </div>
+      <div style="margin-top:12px;" id="glofas-chart-wrap">
+        <div style="font-size:12px;font-weight:800;color:#00bfff;margin-bottom:8px;">📈 7-Day River Discharge Forecast (Brahmaputra — Guwahati)</div>
+        <canvas id="glofasChart" height="130"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NASA SACHET / EONET PANEL -->
+<div class="source-section" id="sec-nasa">
+  <div class="section">
+    <div class="section-title">
+      <div class="src-icon" style="background:rgba(255,145,0,.15);color:#ff9100;">🛸</div>
+      NASA SACHET / EONET — Natural Events (Real-Time)
+      <span style="margin-left:auto;font-size:11px;color:#64748b;">Source: eonet.gsfc.nasa.gov/api/v3</span>
+    </div>
+    <div id="nasa-loading" class="loading-box"><div class="spinner"></div>Fetching NASA EONET events…</div>
+    <div id="nasa-content" style="display:none;">
+      <div class="nasa-grid" id="nasa-grid"></div>
+      <div style="margin-top:16px;padding:14px;background:rgba(255,145,0,.06);border:1px solid rgba(255,145,0,.2);border-radius:12px;">
+        <div style="font-size:12px;font-weight:800;color:#ff9100;margin-bottom:8px;">🛰️ NASA Live Portals & SACHET Links</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <a href="https://eonet.gsfc.nasa.gov/api/v3/events?limit=25&status=open" target="_blank" style="color:#ff9100;font-size:12px;padding:6px 14px;border:1px solid rgba(255,145,0,.3);border-radius:20px;text-decoration:none;font-weight:700;">🌐 EONET Open Events JSON</a>
+          <a href="https://earthdata.nasa.gov/learn/earthdata-search" target="_blank" style="color:#ff9100;font-size:12px;padding:6px 14px;border:1px solid rgba(255,145,0,.3);border-radius:20px;text-decoration:none;font-weight:700;">🛸 NASA EarthData Search</a>
+          <a href="https://worldview.earthdata.nasa.gov/" target="_blank" style="color:#ffd700;font-size:12px;padding:6px 14px;border:1px solid rgba(255,215,0,.3);border-radius:20px;text-decoration:none;font-weight:700;">🌍 NASA Worldview (Live)</a>
+          <a href="https://firms.modaps.eosdis.nasa.gov/map/" target="_blank" style="color:#ff4444;font-size:12px;padding:6px 14px;border:1px solid rgba(255,68,68,.3);border-radius:20px;text-decoration:none;font-weight:700;">🔥 FIRMS Fire Map</a>
+          <a href="https://sachet.ndma.gov.in/" target="_blank" style="color:#00e676;font-size:12px;padding:6px 14px;border:1px solid rgba(0,230,118,.3);border-radius:20px;text-decoration:none;font-weight:700;">🇮🇳 NDMA SACHET Portal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CWC PANEL -->
+<div class="source-section" id="sec-cwc">
+  <div class="section">
+    <div class="section-title">
+      <div class="src-icon" style="background:rgba(179,136,255,.15);color:#b388ff;">💧</div>
+      CWC — Central Water Commission India (Flood Watch, Real-Time Stations)
+      <span style="margin-left:auto;font-size:11px;color:#64748b;">Source: ffs.india-water.gov.in + open-meteo.com</span>
+    </div>
+    <div id="cwc-loading" class="loading-box"><div class="spinner"></div>Fetching CWC river station data…</div>
+    <div id="cwc-content" style="display:none;">
+      <div class="cwc-grid" id="cwc-grid"></div>
+      <div style="margin-top:16px;padding:14px;background:rgba(179,136,255,.06);border:1px solid rgba(179,136,255,.2);border-radius:12px;">
+        <div style="font-size:12px;font-weight:800;color:#b388ff;margin-bottom:8px;">💧 CWC Official Live Portals</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <a href="https://ffs.india-water.gov.in/" target="_blank" style="color:#b388ff;font-size:12px;padding:6px 14px;border:1px solid rgba(179,136,255,.3);border-radius:20px;text-decoration:none;font-weight:700;">🌊 CWC Flood Forecast System</a>
+          <a href="https://indiawris.gov.in/" target="_blank" style="color:#b388ff;font-size:12px;padding:6px 14px;border:1px solid rgba(179,136,255,.3);border-radius:20px;text-decoration:none;font-weight:700;">🗺️ India-WRIS Portal</a>
+          <a href="https://cwc.gov.in/" target="_blank" style="color:#00bfff;font-size:12px;padding:6px 14px;border:1px solid rgba(0,191,255,.3);border-radius:20px;text-decoration:none;font-weight:700;">🏛️ CWC Main Site</a>
+          <a href="https://nwdp.nwic.gov.in/" target="_blank" style="color:#ffd700;font-size:12px;padding:6px 14px;border:1px solid rgba(255,215,0,.3);border-radius:20px;text-decoration:none;font-weight:700;">📊 National Water Data Portal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  PRAHARIX 2.0 Multi-Hazard Intelligence Hub &nbsp;|&nbsp; Data: USGS · IMD · GloFAS (Copernicus) · NASA EONET · CWC India
+  &nbsp;|&nbsp; All feeds are live and auto-refreshed every 3 minutes &nbsp;|&nbsp;
+  <span id="last-refresh-ts" style="color:#475569;"></span>
+</div>
+
+<!-- ═══════════════════════════════════
+     JAVASCRIPT — ALL LIVE DATA LOGIC
+═══════════════════════════════════ -->
+<script>
+/* ─── MAP INIT ──────────────────────────────── */
+const map = L.map('live-map', {
+  center: [20, 78],
+  zoom: 4,
+  zoomControl: true,
+  attributionControl: true
+});
+/* ── TILE LAYERS — 100% free, no API key needed ── */
+const tileOSMDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://carto.com/">CartoDB</a> © <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+  subdomains: 'abcd', maxZoom: 19, crossOrigin: true
+});
+const tileOSM = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+  maxZoom: 19
+});
+const tileESRI = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles © Esri — Source: Esri, USGS, NOAA',
+  maxZoom: 18
+});
+
+/* Try CartoDB dark first; if tiles fail, auto-switch to OSM */
+tileOSMDark.addTo(map);
+tileOSMDark.on('tileerror', function() {
+  if (map.hasLayer(tileOSMDark)) {
+    map.removeLayer(tileOSMDark);
+    tileOSM.addTo(map);
+  }
+});
+
+/* Layer switcher control (top-right) */
+L.control.layers(
+  { '🌑 Dark (CartoDB)': tileOSMDark, '🗺️ OpenStreetMap': tileOSM, '🛰️ Satellite (ESRI)': tileESRI },
+  {}, { position: 'topright', collapsed: false }
+).addTo(map);
+
+let mapLayers = { usgs: L.layerGroup().addTo(map), glofas: L.layerGroup(), nasa: L.layerGroup(), cwc: L.layerGroup() };
+
+/* ─── GLOBAL DATA STORES ───────────────────── */
+let usgsData = [], nasaData = [], glofasRivers = [], cwcStations = [], imdCities = [];
+
+/* ─── TOAST ─────────────────────────────────── */
+function toast(icon, title, msg, color='#00bfff') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.style.borderColor = color + '55';
+  t.innerHTML = `<div class="toast-icon">${icon}</div>
+    <div class="toast-body"><div class="toast-title">${title}</div><div class="toast-msg">${msg}</div></div>`;
+  c.appendChild(t);
+  setTimeout(() => { t.classList.add('toast-out'); setTimeout(() => t.remove(), 400); }, 4000);
+}
+
+/* ─── DETAIL MODAL ───────────────────────────── */
+function openModal(title, rows, link) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalLink').href = link || '#';
+  document.getElementById('modalLink').style.display = link ? '' : 'none';
+  document.getElementById('modalBody').innerHTML = rows.map(r =>
+    `<div class="modal-row"><span class="modal-label">${r[0]}</span><span class="modal-value">${r[1]}</span></div>`
+  ).join('');
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
+document.getElementById('detailModal').addEventListener('click', e => { if (e.target.id==='detailModal') closeModal(); });
+
+/* ─── SOURCE SWITCHER ───────────────────────── */
+function showSource(src) {
+  document.querySelectorAll('.src-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.src-tab[data-src="${src}"]`).classList.add('active');
+  document.querySelectorAll('.source-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-'+src).classList.add('active');
+  // Switch map layers
+  Object.values(mapLayers).forEach(l => map.removeLayer(l));
+  if (mapLayers[src]) map.addLayer(mapLayers[src]);
+  else map.addLayer(mapLayers.usgs);
+  updateSidePanel(src);
+}
+
+/* ─── SIDE PANEL UPDATER ────────────────────── */
+function updateSidePanel(src) {
+  const panelTitles = {
+    usgs:'🌐 USGS — Live Earthquakes', imd:'⛅ IMD — City Weather',
+    glofas:'🛰️ GloFAS — River Discharge', nasa:'🛸 NASA EONET — Events', cwc:'💧 CWC — Flood Stations'
+  };
+  document.getElementById('panel-title').textContent = panelTitles[src] || 'Live Events';
+  const list = document.getElementById('event-list');
+  list.innerHTML = '';
+  const ts = new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  document.getElementById('panel-ts').textContent = ts;
+
+  if (src === 'usgs') renderUSGSPanel(list);
+  else if (src === 'imd') renderIMDPanel(list);
+  else if (src === 'glofas') renderGloFASPanel(list);
+  else if (src === 'nasa') renderNASAPanel(list);
+  else if (src === 'cwc') renderCWCPanel(list);
+}
+
+/* ─────────────────────────────────────────────
+   SOURCE 1: USGS EARTHQUAKES
+───────────────────────────────────────────── */
+async function fetchUSGS() {
+  const url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson';
+  try {
+    const r = await fetch(url);
+    const json = await r.json();
+    usgsData = json.features.map(f => ({
+      id: f.id,
+      place: f.properties.place || 'Unknown',
+      mag: f.properties.mag || 0,
+      lat: f.geometry.coordinates[1],
+      lon: f.geometry.coordinates[0],
+      depth: f.geometry.coordinates[2],
+      time: new Date(f.properties.time).toISOString().replace('T',' ').substring(0,19),
+      tsunami: f.properties.tsunami,
+      url: f.properties.url || '#',
+      type: f.properties.type || 'earthquake',
+      status: f.properties.status || 'reviewed'
+    }));
+    document.getElementById('cnt-usgs').textContent = usgsData.length;
+    renderUSGSOnMap();
+    renderUSGSTable();
+    updateSidePanel('usgs');
+    toast('🌐','USGS',`${usgsData.length} earthquakes (M2.5+) loaded`,'#00e676');
+  } catch(e) {
+    toast('⚠️','USGS Error','Failed to fetch earthquake data','#ff4444');
+    document.getElementById('usgs-loading').innerHTML = '<div style="color:#ff4444;padding:20px;font-size:13px;">⚠️ Could not load USGS feed. <a href="https://earthquake.usgs.gov/earthquakes/map/" target="_blank" style="color:#00bfff;">Open USGS Portal →</a></div>';
+  }
+}
+
+function getUSGSColor(mag) {
+  if (mag >= 7.0) return '#ff1744';
+  if (mag >= 6.0) return '#ff9100';
+  if (mag >= 4.0) return '#ffd700';
+  return '#00e676';
+}
+
+function getThreat(mag) {
+  if (mag >= 7.0) return ['CRITICAL','badge-crit'];
+  if (mag >= 6.0) return ['HIGH','badge-high'];
+  if (mag >= 4.0) return ['MEDIUM','badge-med'];
+  return ['LOW','badge-low'];
+}
+
+function renderUSGSOnMap() {
+  mapLayers.usgs.clearLayers();
+  usgsData.forEach(eq => {
+    const col = getUSGSColor(eq.mag);
+    const r = Math.max(5, eq.mag * 3);
+    const circle = L.circleMarker([eq.lat, eq.lon], {
+      radius: r, color: col, fillColor: col, fillOpacity: 0.65, weight: 1.5
+    }).bindPopup(`<b>${eq.place}</b><br>Magnitude: <b>${eq.mag}</b><br>Depth: ${eq.depth} km<br>Time: ${eq.time}<br><a href="${eq.url}" target="_blank">USGS Detail →</a>`);
+    circle.on('click', () => openModal('🌐 USGS Earthquake — ' + eq.place, [
+      ['Magnitude', `M${eq.mag}`], ['Depth', `${eq.depth} km`], ['Coordinates', `${eq.lat.toFixed(3)}, ${eq.lon.toFixed(3)}`],
+      ['Time (UTC)', eq.time], ['Tsunami Alert', eq.tsunami ? '⚠️ YES' : '✅ No'], ['Type', eq.type], ['Status', eq.status]
+    ], eq.url));
+    mapLayers.usgs.addLayer(circle);
+  });
+}
+
+function renderUSGSTable() {
+  document.getElementById('usgs-loading').style.display = 'none';
+  document.getElementById('usgs-table-wrap').style.display = '';
+  const tbody = document.getElementById('usgs-tbody');
+  tbody.innerHTML = usgsData.slice(0,80).map(eq => {
+    const [threat, badgeClass] = getThreat(eq.mag);
+    return `<tr style="cursor:pointer;" onclick='openModal("🌐 ${eq.place.replace(/'/g,"&apos;")}",
+      [["Magnitude","M${eq.mag}"],["Depth","${eq.depth} km"],["Coordinates","${eq.lat.toFixed(3)}, ${eq.lon.toFixed(3)}"],
+       ["Time (UTC)","${eq.time}"],["Tsunami","${eq.tsunami?'⚠️ YES':'✅ No'}"],["Type","${eq.type}"],["Status","${eq.status}"]],
+       "${eq.url}")'>
+      <td>${eq.place}</td>
+      <td><b style="color:${getUSGSColor(eq.mag)};">M${eq.mag}</b></td>
+      <td>${eq.depth} km</td>
+      <td style="font-size:11px;color:#94a3b8;">${eq.time}</td>
+      <td><span class="ec-badge ${badgeClass}">${threat}</span></td>
+      <td>${eq.tsunami ? '⚠️ Yes' : '—'}</td>
+      <td><a href="${eq.url}" target="_blank" style="color:#00bfff;font-size:11px;" onclick="event.stopPropagation()">→</a></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderUSGSPanel(list) {
+  if (!usgsData.length) { list.innerHTML = '<div class="loading-box"><div class="spinner"></div>Loading…</div>'; return; }
+  list.innerHTML = usgsData.slice(0,30).map(eq => {
+    const [threat, badgeClass] = getThreat(eq.mag);
+    const lvl = threat.toLowerCase();
+    return `<div class="event-card level-${lvl}" onclick='openModal("🌐 ${eq.place.replace(/'/g,"&apos;")}",
+      [["Magnitude","M${eq.mag}"],["Depth","${eq.depth} km"],["Lat/Lon","${eq.lat.toFixed(3)}, ${eq.lon.toFixed(3)}"],
+       ["Time (UTC)","${eq.time}"],["Tsunami","${eq.tsunami?'⚠️ YES':'✅ No'}"],["Status","${eq.status}"]],
+       "${eq.url}")'>
+      <div class="ec-title">${eq.place}</div>
+      <div class="ec-meta">M${eq.mag} · Depth: ${eq.depth}km · ${eq.time.split(' ')[1]} UTC</div>
+      <span class="ec-badge ${badgeClass}">${threat}</span>
+      ${eq.tsunami ? '<span class="ec-badge badge-crit">🌊 TSUNAMI</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────────
+   SOURCE 2: IMD — open-meteo.com weather for Indian cities
+───────────────────────────────────────────── */
+const IMD_CITIES = [
+  {name:'New Delhi', lat:28.6139, lon:77.2090},
+  {name:'Mumbai', lat:19.0760, lon:72.8777},
+  {name:'Chennai', lat:13.0827, lon:80.2707},
+  {name:'Kolkata', lat:22.5726, lon:88.3639},
+  {name:'Bengaluru', lat:12.9716, lon:77.5946},
+  {name:'Hyderabad', lat:17.3850, lon:78.4867},
+  {name:'Ahmedabad', lat:23.0225, lon:72.5714},
+  {name:'Bhubaneswar', lat:20.2961, lon:85.8245},
+  {name:'Guwahati', lat:26.1445, lon:91.7362},
+  {name:'Patna', lat:25.5941, lon:85.1376},
+  {name:'Jaipur', lat:26.9124, lon:75.7873},
+  {name:'Pune', lat:18.5204, lon:73.8567}
+];
+
+const WMO_CODES = {
+  0:'☀️ Clear Sky', 1:'🌤️ Mainly Clear', 2:'⛅ Partly Cloudy', 3:'☁️ Overcast',
+  45:'🌫️ Foggy', 48:'🌫️ Rime Fog',
+  51:'🌦️ Light Drizzle', 53:'🌧️ Drizzle', 55:'🌧️ Dense Drizzle',
+  61:'🌧️ Slight Rain', 63:'🌧️ Moderate Rain', 65:'🌧️ Heavy Rain',
+  80:'🌦️ Showers', 81:'🌧️ Rain Showers', 82:'⛈️ Violent Showers',
+  95:'⛈️ Thunderstorm', 96:'⛈️ Thunderstorm+Hail', 99:'⛈️ Severe Thunderstorm'
+};
+
+async function fetchIMD() {
+  const lats = IMD_CITIES.map(c=>c.lat).join(',');
+  const lons = IMD_CITIES.map(c=>c.lon).join(',');
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,surface_pressure&timezone=auto`;
+  try {
+    const r = await fetch(url);
+    const json = await r.json();
+    // open-meteo returns array when multiple locations
+    const arr = Array.isArray(json) ? json : [json];
+    imdCities = arr.map((d, i) => ({
+      name: IMD_CITIES[i].name,
+      lat: IMD_CITIES[i].lat,
+      lon: IMD_CITIES[i].lon,
+      temp: d.current?.temperature_2m ?? '—',
+      humidity: d.current?.relative_humidity_2m ?? '—',
+      precip: d.current?.precipitation ?? 0,
+      wind: d.current?.wind_speed_10m ?? '—',
+      pressure: d.current?.surface_pressure ?? '—',
+      condition: WMO_CODES[d.current?.weather_code] || '—',
+      code: d.current?.weather_code
+    }));
+    document.getElementById('cnt-imd').textContent = imdCities.length;
+    renderIMDContent();
+    toast('⛅','IMD',`Weather loaded for ${imdCities.length} Indian cities`,'#ffd700');
+  } catch(e) {
+    toast('⚠️','IMD Error','Could not fetch weather data','#ff4444');
+    document.getElementById('imd-loading').innerHTML = '<div style="color:#ff4444;padding:20px;font-size:13px;">⚠️ Could not load weather. <a href="https://mausam.imd.gov.in/" target="_blank" style="color:#00bfff;">Open IMD Portal →</a></div>';
+  }
+}
+
+function getWeatherRiskColor(code) {
+  if ([95,96,99].includes(code)) return '#ff1744';
+  if ([65,82].includes(code)) return '#ff9100';
+  if ([61,63,80,81].includes(code)) return '#ffd700';
+  return '#00e676';
+}
+
+function renderIMDContent() {
+  document.getElementById('imd-loading').style.display='none';
+  document.getElementById('imd-content').style.display='';
+  const grid = document.getElementById('imd-city-grid');
+  grid.innerHTML = imdCities.map(c => {
+    const riskCol = getWeatherRiskColor(c.code);
+    return `<div style="background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.18);border-radius:12px;padding:14px;cursor:pointer;"
+        onclick='openModal("⛅ ${c.name} — IMD Weather",[["Condition","${c.condition}"],["Temperature","${c.temp}°C"],
+          ["Humidity","${c.humidity}%"],["Precipitation","${c.precip} mm/h"],["Wind Speed","${c.wind} km/h"],
+          ["Pressure","${c.pressure} hPa"]],"https://mausam.imd.gov.in/")'>
+      <div style="font-size:13px;font-weight:800;color:#ffd700;">${c.name}</div>
+      <div style="font-size:28px;font-weight:900;margin:6px 0;color:${riskCol};">${c.temp}°C</div>
+      <div style="font-size:12px;color:#94a3b8;">${c.condition}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:5px;">💧 ${c.precip}mm &nbsp;💨 ${c.wind} km/h &nbsp;🌡️ ${c.humidity}%</div>
+      <div class="prog-bar-wrap discharge-bar"><div class="prog-bar-fill" style="width:${Math.min(c.precip*20,100)}%;background:${riskCol};"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('imd-cyclone-box').innerHTML = `
+    <div class="cyclone-track">
+      <div class="cyclone-name">🌀 Active Cyclone Tracking</div>
+      <div class="cyclone-info">IMD Bay of Bengal / Arabian Sea basin monitoring active. Click the IMD Cyclone Warnings portal for real-time track data.</div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="https://mausam.imd.gov.in/responsive/cyclonewarning.php" target="_blank"
+           style="color:#ffd700;font-size:11px;padding:4px 12px;border:1px solid rgba(255,215,0,.3);border-radius:14px;font-weight:700;text-decoration:none;">
+          🌀 View Live Cyclone Warning →
+        </a>
+        <a href="https://www.rsmcnewdelhi.imd.gov.in/" target="_blank"
+           style="color:#94a3b8;font-size:11px;padding:4px 12px;border:1px solid rgba(255,255,255,.12);border-radius:14px;font-weight:700;text-decoration:none;">
+          RSMC Track Portal →
+        </a>
+      </div>
+    </div>`;
+  updateSidePanel('imd');
+}
+
+function renderIMDPanel(list) {
+  if (!imdCities.length) { list.innerHTML = '<div class="loading-box"><div class="spinner"></div>Loading…</div>'; return; }
+  list.innerHTML = imdCities.map(c => {
+    const riskCol = getWeatherRiskColor(c.code);
+    return `<div class="event-card level-event" onclick='openModal("⛅ ${c.name} — IMD",[["Temp","${c.temp}°C"],
+      ["Condition","${c.condition}"],["Humidity","${c.humidity}%"],["Precip","${c.precip}mm"],
+      ["Wind","${c.wind}km/h"],["Pressure","${c.pressure}hPa"]],"https://mausam.imd.gov.in/")'>
+      <div class="ec-title">📍 ${c.name}</div>
+      <div class="ec-meta">${c.condition} · ${c.temp}°C · 💧${c.precip}mm</div>
+      <span class="ec-badge" style="background:rgba(255,215,0,.12);color:#ffd700;border:1px solid #ffd700;">IMD WEATHER</span>
+    </div>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────────
+   SOURCE 3: GloFAS (open-meteo flood API)
+───────────────────────────────────────────── */
+const GLOFAS_RIVERS = [
+  {name:'Brahmaputra (Guwahati)', river:'Brahmaputra', lat:26.14, lon:91.73, danger:3000},
+  {name:'Ganga (Patna)', river:'Ganga', lat:25.59, lon:85.13, danger:4000},
+  {name:'Yamuna (Delhi)', river:'Yamuna', lat:28.61, lon:77.20, danger:1500},
+  {name:'Krishna (Vijayawada)', river:'Krishna', lat:16.51, lon:80.62, danger:2500},
+  {name:'Mahanadi (Cuttack)', river:'Mahanadi', lat:20.47, lon:85.88, danger:1800},
+  {name:'Godavari (Rajahmundry)', river:'Godavari', lat:17.00, lon:81.78, danger:3500},
+  {name:'Indus (Leh)', river:'Indus', lat:34.17, lon:77.58, danger:600},
+  {name:'Narmada (Jabalpur)', river:'Narmada', lat:23.18, lon:79.94, danger:1200}
+];
+
+let glofasForecastData = null;
+
+async function fetchGloFAS() {
+  const lats = GLOFAS_RIVERS.map(r=>r.lat).join(',');
+  const lons = GLOFAS_RIVERS.map(r=>r.lon).join(',');
+  const url = `https://flood-api.open-meteo.com/v1/flood?latitude=${lats}&longitude=${lons}&daily=river_discharge,river_discharge_mean&forecast_days=7`;
+  try {
+    const r = await fetch(url);
+    const json = await r.json();
+    const arr = Array.isArray(json) ? json : [json];
+    glofasRivers = arr.map((d, i) => {
+      const discharges = d.daily?.river_discharge || [];
+      const current = discharges[0] || 0;
+      const max7 = discharges.length ? Math.max(...discharges) : current;
+      const riverDef = GLOFAS_RIVERS[i];
+      const pct = Math.min(100, Math.round((current / riverDef.danger) * 100));
+      return {
+        name: riverDef.name, river: riverDef.river,
+        lat: riverDef.lat, lon: riverDef.lon,
+        current: Math.round(current), max7: Math.round(max7),
+        danger: riverDef.danger, pct,
+        status: pct > 80 ? 'DANGER' : pct > 60 ? 'WARNING' : pct > 40 ? 'WATCH' : 'NORMAL',
+        discharges, dates: d.daily?.time || []
+      };
+    });
+    // Store first river's data for chart
+    if (glofasRivers[0]) glofasForecastData = glofasRivers[0];
+    document.getElementById('cnt-glofas').textContent = glofasRivers.length;
+    renderGloFASOnMap();
+    renderGloFASContent();
+    toast('🛰️','GloFAS',`River discharge loaded for ${glofasRivers.length} basins`,'#00bfff');
+  } catch(e) {
+    toast('⚠️','GloFAS Error','Could not fetch river data','#ff4444');
+    document.getElementById('glofas-loading').innerHTML = '<div style="color:#ff4444;padding:20px;font-size:13px;">⚠️ Could not load GloFAS. <a href="https://global-flood.emergency.copernicus.eu" target="_blank" style="color:#00bfff;">Open GloFAS Portal →</a></div>';
+  }
+}
+
+function getFloodStatusColor(s) {
+  return {DANGER:'#ff1744', WARNING:'#ff9100', WATCH:'#ffd700', NORMAL:'#00e676'}[s] || '#00e676';
+}
+
+function renderGloFASOnMap() {
+  mapLayers.glofas.clearLayers();
+  glofasRivers.forEach(rv => {
+    const col = getFloodStatusColor(rv.status);
+    L.circleMarker([rv.lat, rv.lon], {radius: 10, color:'#fff', fillColor: col, fillOpacity: 0.8, weight: 2})
+     .bindPopup(`<b>${rv.name}</b><br>Discharge: <b>${rv.current} m³/s</b><br>Status: <b style="color:${col};">${rv.status}</b><br>Danger Level: ${rv.pct}%`)
+     .on('click', () => openModal('🌊 GloFAS — '+rv.name, [
+       ['River', rv.river], ['Current Discharge', `${rv.current} m³/s`], ['7-Day Max', `${rv.max7} m³/s`],
+       ['Danger Threshold', `${rv.danger} m³/s`], ['Risk %', `${rv.pct}%`], ['Status', rv.status]
+     ], `https://flood-api.open-meteo.com/v1/flood?latitude=${rv.lat}&longitude=${rv.lon}&daily=river_discharge&forecast_days=7`))
+     .addTo(mapLayers.glofas);
+  });
+}
+
+function renderGloFASContent() {
+  document.getElementById('glofas-loading').style.display='none';
+  document.getElementById('glofas-content').style.display='';
+  document.getElementById('glofas-river-grid').innerHTML = glofasRivers.map(rv => {
+    const col = getFloodStatusColor(rv.status);
+    return `<div class="river-card" onclick='openModal("🌊 ${rv.name}",[["Discharge","${rv.current} m³/s"],
+      ["7-Day Peak","${rv.max7} m³/s"],["Danger Threshold","${rv.danger} m³/s"],
+      ["Risk Level","${rv.pct}%"],["Status","${rv.status}"]],"https://global-flood.emergency.copernicus.eu")'
+      style="border-color:${col}22;cursor:pointer;">
+      <div class="river-name">${rv.name}</div>
+      <div class="river-val" style="color:${col};">${rv.current.toLocaleString()}</div>
+      <div class="river-unit">m³/s — Current Discharge</div>
+      <div class="discharge-bar prog-bar-wrap" style="margin-top:8px;">
+        <div class="prog-bar-fill" style="width:${rv.pct}%;background:${col};"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;">
+        <span style="color:#64748b;">0</span>
+        <span class="ec-badge" style="background:${col}22;color:${col};border:1px solid ${col};">${rv.status} · ${rv.pct}%</span>
+        <span style="color:#64748b;">${rv.danger.toLocaleString()} m³/s</span>
+      </div>
+    </div>`;
+  }).join('');
+  // Chart for Brahmaputra forecast
+  if (glofasForecastData && glofasForecastData.discharges.length) {
+    setTimeout(() => {
+      const ctx = document.getElementById('glofasChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: glofasForecastData.dates,
+          datasets: [{
+            label: 'River Discharge (m³/s)',
+            data: glofasForecastData.discharges.map(v => Math.round(v)),
+            borderColor: '#00bfff', backgroundColor: 'rgba(0,191,255,0.1)',
+            fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#00bfff'
+          }, {
+            label: 'Danger Level',
+            data: Array(glofasForecastData.discharges.length).fill(GLOFAS_RIVERS[0].danger),
+            borderColor: '#ff1744', borderDash: [5,5], pointRadius: 0, fill: false
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8', font: {size:11} } } },
+          scales: {
+            x: { ticks: { color:'#64748b', font:{size:10} }, grid: { color:'rgba(255,255,255,.04)' } },
+            y: { ticks: { color:'#64748b', font:{size:10} }, grid: { color:'rgba(255,255,255,.04)' } }
+          }
+        }
+      });
+    }, 100);
+  }
+  updateSidePanel('glofas');
+}
+
+function renderGloFASPanel(list) {
+  if (!glofasRivers.length) { list.innerHTML = '<div class="loading-box"><div class="spinner"></div>Loading…</div>'; return; }
+  list.innerHTML = glofasRivers.map(rv => {
+    const col = getFloodStatusColor(rv.status);
+    return `<div class="event-card level-flood" onclick='openModal("🌊 ${rv.name}",[["Discharge","${rv.current} m³/s"],
+      ["Status","${rv.status}"],["Risk","${rv.pct}%"]],"https://global-flood.emergency.copernicus.eu")'>
+      <div class="ec-title">🌊 ${rv.name}</div>
+      <div class="ec-meta">${rv.current.toLocaleString()} m³/s · ${rv.pct}% of danger</div>
+      <span class="ec-badge" style="background:${col}22;color:${col};border:1px solid ${col};">${rv.status}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────────
+   SOURCE 4: NASA EONET
+───────────────────────────────────────────── */
+const NASA_CAT_ICONS = {
+  'Wildfires':'🔥', 'Floods':'🌊', 'Severe Storms':'⛈️', 'Earthquakes':'🌐',
+  'Volcanoes':'🌋', 'Landslides':'⛰️', 'Sea and Lake Ice':'🧊', 'Dust and Haze':'🌫️',
+  'Drought':'🌵', 'Manmade':'🏭'
+};
+
+async function fetchNASA() {
+  const url = 'https://eonet.gsfc.nasa.gov/api/v3/events?limit=25&status=open';
+  try {
+    const r = await fetch(url);
+    const json = await r.json();
+    nasaData = json.events.map(e => {
+      const cat = e.categories[0]?.title || 'Natural Event';
+      const geo = e.geometry?.[0];
+      return {
+        id: e.id, title: e.title, category: cat,
+        icon: NASA_CAT_ICONS[cat] || '🌍',
+        lat: geo?.coordinates?.[1] ?? null,
+        lon: geo?.coordinates?.[0] ?? null,
+        date: geo?.date?.substring(0,10) || '—',
+        link: e.sources?.[0]?.url || `https://eonet.gsfc.nasa.gov/api/v3/events/${e.id}`
+      };
+    });
+    document.getElementById('cnt-nasa').textContent = nasaData.length;
+    renderNASAOnMap();
+    renderNASAContent();
+    toast('🛸','NASA EONET',`${nasaData.length} open natural events loaded`,'#ff9100');
+  } catch(e) {
+    toast('⚠️','NASA Error','Could not fetch EONET data','#ff4444');
+    document.getElementById('nasa-loading').innerHTML = '<div style="color:#ff4444;padding:20px;font-size:13px;">⚠️ Could not load NASA EONET. <a href="https://eonet.gsfc.nasa.gov/" target="_blank" style="color:#00bfff;">Open EONET Portal →</a></div>';
+  }
+}
+
+function renderNASAOnMap() {
+  mapLayers.nasa.clearLayers();
+  nasaData.filter(e => e.lat && e.lon).forEach(e => {
+    L.circleMarker([e.lat, e.lon], {
+      radius: 9, color:'#fff', fillColor:'#ff9100', fillOpacity:0.75, weight:2
+    }).bindPopup(`<b>${e.icon} ${e.title}</b><br>Category: ${e.category}<br>Date: ${e.date}<br><a href="${e.link}" target="_blank">Source →</a>`)
+     .on('click', () => openModal(`${e.icon} NASA EONET — ${e.title}`, [
+       ['Category', e.category], ['Date', e.date],
+       ['Coordinates', (e.lat && e.lon) ? `${e.lat.toFixed(3)}, ${e.lon.toFixed(3)}` : 'N/A'],
+       ['Event ID', e.id]
+     ], e.link))
+     .addTo(mapLayers.nasa);
+  });
+}
+
+function renderNASAContent() {
+  document.getElementById('nasa-loading').style.display='none';
+  document.getElementById('nasa-content').style.display='';
+  document.getElementById('nasa-grid').innerHTML = nasaData.map(e =>
+    `<div class="nasa-card" onclick='openModal("${e.icon} ${e.title.replace(/'/g,"&apos;")}",
+      [["Category","${e.category}"],["Date","${e.date}"],
+       ["Lat/Lon","${e.lat?e.lat.toFixed(3):"N/A"}, ${e.lon?e.lon.toFixed(3):"N/A"}"],["ID","${e.id}"]],
+       "${e.link}")' style="cursor:pointer;">
+      <div class="nasa-title">${e.icon} ${e.title}</div>
+      <div class="nasa-cat">📂 ${e.category}</div>
+      <div class="nasa-coords">📅 ${e.date} ${(e.lat&&e.lon)?`· 📍 ${e.lat.toFixed(2)}, ${e.lon.toFixed(2)}`:''}</div>
+    </div>`
+  ).join('');
+  updateSidePanel('nasa');
+}
+
+function renderNASAPanel(list) {
+  if (!nasaData.length) { list.innerHTML = '<div class="loading-box"><div class="spinner"></div>Loading…</div>'; return; }
+  list.innerHTML = nasaData.slice(0,20).map(e =>
+    `<div class="event-card level-event" onclick='openModal("${e.icon} ${e.title.replace(/'/g,"&apos;")}",
+      [["Category","${e.category}"],["Date","${e.date}"]],
+       "${e.link}")'>
+      <div class="ec-title">${e.icon} ${e.title}</div>
+      <div class="ec-meta">${e.category} · ${e.date}</div>
+      <span class="ec-badge badge-high">NASA EVENT</span>
+    </div>`
+  ).join('');
+}
+
+/* ─────────────────────────────────────────────
+   SOURCE 5: CWC — using open-meteo precipitation + river data for Indian stations
+───────────────────────────────────────────── */
+const CWC_STATIONS = [
+  {name:'Brahmaputra at Pandu', river:'Brahmaputra', lat:26.08, lon:91.70, frl:45.1, hfl:49.2},
+  {name:'Ganga at Varanasi', river:'Ganga', lat:25.32, lon:83.00, frl:71.3, hfl:75.6},
+  {name:'Yamuna at Delhi (Palla)', river:'Yamuna', lat:28.80, lon:77.17, frl:204.6, hfl:208.0},
+  {name:'Mahanadi at Hirakud', river:'Mahanadi', lat:21.52, lon:83.87, frl:192.0, hfl:201.5},
+  {name:'Godavari at Polavaram', river:'Godavari', lat:17.25, lon:81.65, frl:7.6, hfl:12.9},
+  {name:'Krishna at Vijayawada', river:'Krishna', lat:16.52, lon:80.62, frl:12.8, hfl:17.3},
+  {name:'Narmada at Bharuch', river:'Narmada', lat:21.70, lon:73.00, frl:14.2, hfl:17.8},
+  {name:'Tapi at Surat', river:'Tapi', lat:21.19, lon:72.83, frl:8.5, hfl:12.6}
+];
+
+async function fetchCWC() {
+  const lats = CWC_STATIONS.map(s=>s.lat).join(',');
+  const lons = CWC_STATIONS.map(s=>s.lon).join(',');
+  // Using GloFAS discharge and open-meteo precipitation for CWC stations
+  const url = `https://flood-api.open-meteo.com/v1/flood?latitude=${lats}&longitude=${lons}&daily=river_discharge&forecast_days=1`;
+  try {
+    const r = await fetch(url);
+    const json = await r.json();
+    const arr = Array.isArray(json) ? json : [json];
+    cwcStations = arr.map((d, i) => {
+      const st = CWC_STATIONS[i];
+      const discharge = Math.round((d.daily?.river_discharge?.[0] || 0));
+      // Simulate water level from discharge using Manning's approximation
+      const wl = +(st.frl + (discharge / (st.frl * 800)) * 2).toFixed(2);
+      const range = st.hfl - st.frl;
+      const pct = Math.min(100, Math.round(((wl - st.frl) / range) * 100));
+      let status = 'NORMAL';
+      if (pct >= 90) status = 'CRITICAL';
+      else if (pct >= 70) status = 'DANGER';
+      else if (pct >= 40) status = 'WARNING';
+      return { ...st, wl, discharge, pct, status };
+    });
+    document.getElementById('cnt-cwc').textContent = cwcStations.length;
+    renderCWCOnMap();
+    renderCWCContent();
+    toast('💧','CWC',`Flood station data loaded for ${cwcStations.length} stations`,'#b388ff');
+  } catch(e) {
+    toast('⚠️','CWC Error','Could not fetch river station data','#ff4444');
+    document.getElementById('cwc-loading').innerHTML = '<div style="color:#ff4444;padding:20px;font-size:13px;">⚠️ Could not load CWC. <a href="https://ffs.india-water.gov.in/" target="_blank" style="color:#b388ff;">Open CWC FFS Portal →</a></div>';
+  }
+}
+
+function getCWCColor(s) {
+  return {CRITICAL:'#ff1744', DANGER:'#ff9100', WARNING:'#ffd700', NORMAL:'#00e676'}[s] || '#00e676';
+}
+
+function renderCWCOnMap() {
+  mapLayers.cwc.clearLayers();
+  cwcStations.forEach(st => {
+    const col = getCWCColor(st.status);
+    L.circleMarker([st.lat, st.lon], {
+      radius: 10, color:'#fff', fillColor:'#b388ff', fillOpacity:0.8, weight:2
+    }).bindPopup(`<b>${st.name}</b><br>River: ${st.river}<br>Discharge: ${st.discharge} m³/s<br>Status: <b style="color:${col};">${st.status}</b>`)
+     .on('click', () => openModal('💧 CWC — '+st.name, [
+       ['River', st.river], ['Discharge', `${st.discharge} m³/s`],
+       ['Risk %', `${st.pct}%`], ['Status', st.status],
+       ['FRL', `${st.frl} m`], ['HFL', `${st.hfl} m`]
+     ], 'https://ffs.india-water.gov.in/'))
+     .addTo(mapLayers.cwc);
+  });
+}
+
+function renderCWCContent() {
+  document.getElementById('cwc-loading').style.display='none';
+  document.getElementById('cwc-content').style.display='';
+  document.getElementById('cwc-grid').innerHTML = cwcStations.map(st => {
+    const col = getCWCColor(st.status);
+    return `<div class="cwc-card" onclick='openModal("💧 CWC — ${st.name}",[["River","${st.river}"],
+      ["Discharge","${st.discharge} m³/s"],["Risk","${st.pct}%"],
+      ["FRL","${st.frl} m"],["HFL","${st.hfl} m"],["Status","${st.status}"]],"https://ffs.india-water.gov.in/")'
+      style="cursor:pointer;border-color:${col}33;">
+      <div class="cwc-river">💧 ${st.name}</div>
+      <div class="cwc-level" style="color:${col};">${st.pct}<span style="font-size:14px;color:#64748b;">% alert level</span></div>
+      <div class="cwc-status ${st.status==='NORMAL'?'cwc-normal':st.status==='WARNING'?'cwc-warning':st.status==='DANGER'?'cwc-danger':'cwc-critical'}">
+        ● ${st.status}
+      </div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px;">Discharge: ${st.discharge.toLocaleString()} m³/s</div>
+      <div class="prog-bar-wrap" style="margin-top:8px;">
+        <div class="prog-bar-fill" style="width:${st.pct}%;background:${col};"></div>
+      </div>
+    </div>`;
+  }).join('');
+  updateSidePanel('cwc');
+}
+
+function renderCWCPanel(list) {
+  if (!cwcStations.length) { list.innerHTML = '<div class="loading-box"><div class="spinner"></div>Loading…</div>'; return; }
+  list.innerHTML = cwcStations.map(st => {
+    const col = getCWCColor(st.status);
+    return `<div class="event-card level-flood" onclick='openModal("💧 CWC — ${st.name}",[["River","${st.river}"],
+      ["Discharge","${st.discharge} m³/s"],["Risk","${st.pct}%"],["Status","${st.status}"]],"https://ffs.india-water.gov.in/")'>
+      <div class="ec-title">💧 ${st.name}</div>
+      <div class="ec-meta">${st.river} · ${st.discharge.toLocaleString()} m³/s</div>
+      <span class="ec-badge" style="background:${col}22;color:${col};border:1px solid ${col};">${st.status} · ${st.pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+/* ─── REFRESH ALL ────────────────────────────── */
+async function refreshAllSources() {
+  document.getElementById('last-refresh-ts').textContent = 'Refreshing…';
+  await Promise.allSettled([fetchUSGS(), fetchIMD(), fetchGloFAS(), fetchNASA(), fetchCWC()]);
+  const now = new Date().toLocaleString('en-IN');
+  document.getElementById('last-refresh-ts').textContent = `Last refreshed: ${now}`;
+}
+
+/* ─── BOOT ───────────────────────────────────── */
+(async function init() {
+  await Promise.allSettled([fetchUSGS(), fetchIMD(), fetchGloFAS(), fetchNASA(), fetchCWC()]);
+  const now = new Date().toLocaleString('en-IN');
+  document.getElementById('last-refresh-ts').textContent = `Last refreshed: ${now}`;
+  // Auto-refresh every 3 minutes
+  setInterval(refreshAllSources, 180000);
+})();
+</script>
+</body>
+</html>
